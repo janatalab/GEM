@@ -1,0 +1,8 @@
+GEM 			KEYWORD1
+GEMerror		KEYWORD1
+GEMsound		KEYWORD1
+GEMslave 		KEYWORD1
+GEMmaster 		KEYWORD1
+EnableInterrupt		KEYWORD1
+getGemInfo		KEYWORD2
+runGEM			KEYWORD2
