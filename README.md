@@ -15,5 +15,15 @@ Contains the sketch that is downloaded to the Master Arduino.
 ## Slave_Adaptive
 Contains the sketch that is downloaded to the Slave Arduino.
 
+# Instructions
+By default, the Arduino software expects to see directories in the Arduino directory, and libraries within a directory called "libraries". The simplest thing to do is to clone the repository within the Arduino directory and then make a symbolic link to the GEM library directory from within the libraries directory.
+
+# Dependencies
+This project depends on in number of other libraries:
+<ul>
+<li>WaveHC
+<li>EnableInterrupt
+</ul>
+
 # Contributions
 Initial versions of the code were developed by Wisam Reid (at CCRMA at Stanford) and David Miranda (Case Western Reserve University), with input from Lauren Fink (UC Davis) and Petr Janata (UC Davis).  Wisam, David, and Lauren constructed and started debugging the initial setup in August 2016.  The code was refactored by Petr Janata in March 2017, and constitutes the starting point for this repository.
