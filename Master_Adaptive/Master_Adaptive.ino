@@ -30,9 +30,11 @@
 #include <GEMreport.h>
 
 // DEFINES for compiler
-#define DEBUG 0
+#define DEBUG 1
 #define MAX_SLAVES 4
 #define HANDSHAKE_TIMEOUT 5
+
+#define BAUD_RATE 115200
 
 ///////////  Global Variables  ///////////
 bool TRIAL_RUNNING = false; // this ultimately has to be a variable that is turned off and on by the ECC
@@ -107,7 +109,7 @@ int metronomeLED = A1;
 
 void setup(){
   // Enable serial communication
-  Serial.begin(9600);
+  Serial.begin(BAUD_RATE);
 
   // Enable the Wire interface for I2C communication
   report.infostr("Enabling I2C");
@@ -234,12 +236,12 @@ void loop() {
         // when does this window end
         windowEnds = met.next + long(met.ioi/2); 
 
+        // Send data to the ECC
+
         // reset the current tap times
         for (int s=0; s < MAX_SLAVES; s++){
           currAsynch[s] = NO_RESPONSE;
         }
-
-        // Send data to the ECC
 
         // Increment our window counter
         window++;
