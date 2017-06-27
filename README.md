@@ -8,11 +8,12 @@ Current State:
 
 NB: Some of Petr's old GEM code is still mixed in with this repository but no longer relevant (it is still in here because I am using it for reference). 
 
-# Directories
+# Directories and Files
 ## GEM 
-Contains the C++ files that make up the GEM library.
+Contains the C++ files that make up the GEM library.  
+GEMArduino.h, GEMMasterArduino.h, GEMSlaveArduino.h are core files - all still under development.
 
-## GEMGUI
+## GEM GUI
 - GEMGUI.py contains all of the code that builds the GUI
 - gem_example.py contains example presets and code to run the GUI
 
@@ -21,7 +22,7 @@ Class for reporting errors. GEMErrorCodes.h contains error code constants.
 Still under development.
 
 ## GEMSound 
-Has completely restructured
+Has been restructured in GEMSound.h. Old verions called GEMsound_orig
 
 ## Master_Adaptive
 TODO: will update this once running version ready
