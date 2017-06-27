@@ -10,6 +10,9 @@
 // Standard Arduino include
 #include "Arduino.h"
 
+// GEM constants
+#include "GEMConstants.h"
+
 // WaveHC for the Waveshield
 #include "WaveHC.h"
 

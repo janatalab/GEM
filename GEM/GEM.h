@@ -12,9 +12,11 @@
 //#include "GEMutils.h"
 
 // define various constants
-#define MET_HEURISTIC_AVERAGE 1
-#define GEM_START 1
-#define GEM_STOP 0
+//
+// These were moved on 27Jun2017 by PJ to GEMConstants.h
+// #define MET_HEURISTIC_AVERAGE 1
+// #define GEM_START 1
+// #define GEM_STOP 0
 
 ///////////////////////////////////////////////////////////////////
 

@@ -13,6 +13,9 @@
 // 18Mar2017 PJ - we should really create a GEMSound class in GEM.h so that we don't have to
 // include this code in both the Master and Slave sketches
 
+// Get all our constants
+#include <GEMConstants.h>
+
 // GEM Sound handling stuff
 #include <GEMsound.h>
 
@@ -25,8 +28,7 @@
 // be changed as each sketch is compiled and uploaded to each slave device
 #define ADDRESS 3
 
-// Duration (ms) of interrupt
-#define WRITE_DUR_MS 1
+
 
 // put error messages in flash memory
 // 18Mar2017 PJ - we're going to send error codes to the Experiment Control Computer (ECC) 
@@ -44,7 +46,7 @@
 //  DEBUG - if True, then this device will send debugging messages via the Serial interface
 
 
-bool DEBUG = true;
+bool DEBUG = false;
 
 // Variables specifying FSR input and output
 // These variables should probably also be stored in an FSR object
@@ -92,7 +94,7 @@ bool tapDone = true; // indicates whether a tap was completed
 
 void setup() {
   // Set stuff up for serial communication
-  Serial.begin(9600);  // begin arduino at [BaudRate]
+  Serial.begin(GEM_SERIAL_BAUDRATE);  // begin arduino at [BaudRate]
 
   //I2C Setup
   Wire.begin(ADDRESS); // join i2c bus with address #
@@ -134,7 +136,7 @@ void loop() {
         digitalWrite(sendPin, HIGH);
 
         // keep the pin high
-        delay(WRITE_DUR_MS);
+        delay(GEM_WRITE_DUR_MS);
 
         // revert pin to 0V
         digitalWrite(sendPin, LOW);
@@ -187,7 +189,7 @@ void receiveEvent(int howMany){
       if (DEBUG) Serial.println("Performing handshake");
       
       digitalWrite(sendPin, HIGH);
-      delay(WRITE_DUR_MS);
+      delay(GEM_WRITE_DUR_MS);
       
       // revert pin to 0V
       digitalWrite(sendPin, LOW);
@@ -210,37 +212,7 @@ void receiveEvent(int howMany){
 }
 
 //void receiveEvent(int howMany) {
-//
-//  // Serial.print("Time: ");
-//  char c = 'X';
-//  String TapTime = "";
-//  while (1 < Wire.available()) { // loop through all but the last
-//    c = Wire.read(); // receive byte as a character
-//
-//    // print the character
-//    Serial.print(c);
-//    TapTime += c;
-//
-//  }
-//  long d = Wire.read();
-//
-//  Serial.println(d);
-//
-//  // convert incoming characters into the tap time
-//  int TapLatency = TapTime.toInt();
-//  // print the tap time as an integer
-//  Serial.println(TapLatency);
-//    if (handshake == false)
-//  {
-//
-//  digitalWrite(6, HIGH);
-//  delay(1000);
-//  digitalWrite(6, LOW);
-//
-//  // you have to reset if you don't hanshake OR you send data to the slave
-//  handshake = true;
-//  }
-//}
+
 
 ////////////////////////////////////////////////////////
 //////////////////// END I2C HELPER ////////////////////

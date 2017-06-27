@@ -14,7 +14,7 @@
 // INCLUDE LIBRARIES //
 
 // Interrupt library
-#define EI_ARDUINO_INTERRUPTED_PIN // this will provide info about which pin the interrupt was on
+#define EI_ARDUINO_INTERRUPTED_PIN // this will provide info about which pin the interrupt was on. This define should remain here
 #include <EnableInterrupt.h>
 
 // I2C Communication library
@@ -27,14 +27,17 @@
 #include <GEMsound.h>
 
 // GEM constants
+#include <GEMConstants.h>
+
+// GEM reporting object
 #include <GEMreport.h>
 
 // DEFINES for compiler
 #define DEBUG 1
-#define MAX_SLAVES 4
-#define HANDSHAKE_TIMEOUT 5
+//#define MAX_SLAVES 4
+//#define HANDSHAKE_TIMEOUT 5
 
-#define BAUD_RATE 115200
+//#define BAUD_RATE 115200
 
 ///////////  Global Variables  ///////////
 bool TRIAL_RUNNING = false; // this ultimately has to be a variable that is turned off and on by the ECC
@@ -50,12 +53,12 @@ GEMSound sound;
 GEMReport report;
 
 // Keep track of which slaves are actually connected
-bool slaveIsConnected[MAX_SLAVES];
+bool slaveIsConnected[GEM_MAX_SLAVES];
 uint8_t currSlave;
 uint8_t numSlaves = 0; // actual number of slaves, determined dynamically
 
 //// PINS THAT WE RECEIVE INTERRUPTS ON FROM THE SLAVES
-uint8_t recPins[MAX_SLAVES] = {6, 7, 8, 9};
+uint8_t recPins[GEM_MAX_SLAVES] = {6, 7, 8, 9};
 
 // INTERRUPT FUNCTIONS //
 uint8_t currPin;
@@ -63,7 +66,7 @@ uint8_t currPin;
 // Figure out which slave in our slave array we are dealing with
 // given the interrupt that was fired
 uint8_t indexFromPin(uint8_t thePin){
-  for (int s = 0; s < MAX_SLAVES; s++){
+  for (int s = 0; s < GEM_MAX_SLAVES; s++){
     if (recPins[s] == thePin){
       return s;
     }
@@ -89,7 +92,7 @@ unsigned long window = 0;
 
 // Create an array of tap times for the current window, 
 // relative to the next schedule metronome time
-int currAsynch[MAX_SLAVES];
+int currAsynch[GEM_MAX_SLAVES];
 
 // Tap time registering function that gets attached to the interrupt//
 void registerTap(void){
@@ -109,7 +112,7 @@ int metronomeLED = A1;
 
 void setup(){
   // Enable serial communication
-  Serial.begin(BAUD_RATE);
+  Serial.begin(GEM_SERIAL_BAUDRATE);
 
   // Enable the Wire interface for I2C communication
   report.infostr("Enabling I2C");
@@ -122,7 +125,7 @@ void setup(){
 
   // Check to see which slaves are connected
   report.infostr("Checking for connected slaves");
-  for (int s = 0; s < MAX_SLAVES; s++){
+  for (int s = 0; s < GEM_MAX_SLAVES; s++){
     // Get the current pin
     currPin = recPins[s];
 
@@ -136,7 +139,7 @@ void setup(){
     Wire.beginTransmission(s+1); // transmit to device #
     Wire.write(GEM_REQUEST_ACK); // sends one byte
     Wire.endTransmission(); // stop transmitting
-    delay(HANDSHAKE_TIMEOUT); // give time to do handshake
+    delay(GEM_HANDSHAKE_TIMEOUT); // give time to do handshake
 
     // Disable the interrupt
     disableInterrupt(currPin);
@@ -154,7 +157,7 @@ void setup(){
       delay(500);
       digitalWrite(LEDPin, LOW);
     }
-  } // for (int s = 0; s < MAX_SLAVES; s++)
+  } // for (int s = 0; s < GEM_MAX_SLAVES; s++)
 
   // Report on number of active slaves
   Serial.print("#active slaves: ");
@@ -193,7 +196,7 @@ void loop() {
         break;
 
       case MUTE_SOUND:
-        for (int s=0; s < MAX_SLAVES; s++){
+        for (int s=0; s < GEM_MAX_SLAVES; s++){
           if (slaveIsConnected[s]){
             Wire.beginTransmission(s+1); // transmit to device #
             Wire.write(MUTE_SOUND); // sends one byte
@@ -203,7 +206,7 @@ void loop() {
         break;
 
       case UNMUTE_SOUND:
-        for (int s=0; s < MAX_SLAVES; s++){
+        for (int s=0; s < GEM_MAX_SLAVES; s++){
           if (slaveIsConnected[s]){
             Wire.beginTransmission(s+1); // transmit to device #
             Wire.write(UNMUTE_SOUND); // sends one byte
@@ -231,7 +234,7 @@ void loop() {
         }
  
         // Schedule the next metronome event given our asynchronies, active slaves, and the desired heuristic
-        met.scheduleNext(currAsynch, slaveIsConnected, MAX_SLAVES, MET_HEURISTIC_AVERAGE);
+        met.scheduleNext(currAsynch, slaveIsConnected, GEM_MAX_SLAVES, GEM_METRONOME_HEURISTIC_AVERAGE);
 
         // when does this window end
         windowEnds = met.next + long(met.ioi/2); 
@@ -239,7 +242,7 @@ void loop() {
         // Send data to the ECC
 
         // reset the current tap times
-        for (int s=0; s < MAX_SLAVES; s++){
+        for (int s=0; s < GEM_MAX_SLAVES; s++){
           currAsynch[s] = NO_RESPONSE;
         }
 
