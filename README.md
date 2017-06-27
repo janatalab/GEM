@@ -1,22 +1,33 @@
 # GEM
-This is a repository for code associated with the NAKFI Groove Enhancement Machine (GEM) project led by Petr Janata at UC Davis.
+This is Lauren Fink's version of the GEM library and GUI that is still under heavy development. Anticated finish date: July 2nd, 2017. 
+Scottie Alexander (a fellow neuroscience graduate student, former programmer) helped Lauren in developing the structure and functionality of this code.  
 
-The GEM consists of a set of Arduinos that communicate with each other and with a computer (a MacBook Pro is being used for development) running experiment control software written in Python.
+Current State: 
+- The GUI visual is complete but messages to Arduino still need to be sent to Master using PySerial. This is my goal for the week. 
+- GEM code has been completely restructured and still requires a fair amount of debugging. The structure for sending messages to ECC is already in place in GEMMasterArduino.h. A few more modules and functions remain to be added. 
 
-There is one "master" Arduino that functions as the adaptive metronome and which communicates with the computer.  The other Arduinos, one for each participant, are connected to force-sensitive resistors (FSRs) and also to the Master Arduino.
+NB: Some of Petr's old GEM code is still mixed in with this repository but no longer relevant (it is still in here because I am using it for reference). 
 
 # Directories
 ## GEM 
 Contains the C++ files that make up the GEM library.
 
+## GEMGUI
+- GEMGUI.py contains all of the code that builds the GUI
+- gem_example.py contains example presets and code to run the GUI
+
+## GEMError
+Class for reporting errors. GEMErrorCodes.h contains error code constants. 
+Still under development.
+
+## GEMSound 
+Has completely restructured
+
 ## Master_Adaptive
-Contains the sketch that is downloaded to the Master Arduino.
+TODO: will update this once running version ready
 
-## Slave_Adaptive
-Contains the sketch that is downloaded to the Slave Arduino.
-
-# Instructions
-By default, the Arduino software expects to see directories in the Arduino directory, and libraries within a directory called "libraries". The simplest thing to do is to clone the repository within the Arduino directory and then make a symbolic link to the GEM library directory from within the libraries directory.
+## Slave_Adaptive 
+TODO: will update this once running version ready
 
 # Dependencies
 This project depends on in number of other libraries:
@@ -26,4 +37,4 @@ This project depends on in number of other libraries:
 </ul>
 
 # Contributions
-Initial versions of the code were developed by Wisam Reid (at CCRMA at Stanford) and David Miranda (Case Western Reserve University), with input from Lauren Fink (UC Davis) and Petr Janata (UC Davis).  Wisam, David, and Lauren constructed and started debugging the initial setup in August 2016.  The code was refactored by Petr Janata in March 2017, and constitutes the starting point for this repository.
+Initial versions of the code were developed by Wisam Reid (at CCRMA at Stanford), Lauren Fink (UC Davis) and David Miranda (Case Western Reserve University), with input from Petr Janata (UC Davis).  Wisam, David, and Lauren constructed and started debugging the initial setup in August 2016.  The code was refactored by Petr Janata in March 2017. The code was then refactored again by Lauren Fink and Scottie Alexander in June 2017. 
