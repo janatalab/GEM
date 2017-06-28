@@ -317,7 +317,11 @@ void loop()
             /*NOTE: each data packet sent to ECC conists of 12 bytes
                 -4 for the metronome tone onset (Long on Uno is 4 bytes)
                 -8 for the 4 asynchronies (ints on Uno are 2 bytes)
-            It's up to the ECC to correctly parse the byte stream
+            It's up to the ECC to correctly parse the byte stream.
+            NOTE that this is version 0.0.0 and only incudes raw data (no
+            meta-info) to keep the stream as light as possible, future versions
+            will include more met-data if performance testing results suggest
+            that that is feasible within our time constraints
             -SA 20170628
             */
 
