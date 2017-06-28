@@ -74,13 +74,15 @@ public:
     int bpm;
 
     // inter-onset-interval (ms) corresponding to bpm
-    unsigned long ioi; 
+    unsigned long ioi;
 
     // Has the sound been played in this window
     bool played;
 
     // Time of next event
-    unsigned long next;
+    // NOTE: <next> is accessed within the registerTap() ISR and so needs to be
+    // volatile qualified -SA 20170628
+    volatile unsigned long next;
 
     // Functions
     void scheduleNext(int asynchArray[], bool isActive[], int numSlaves, int heuristic);
