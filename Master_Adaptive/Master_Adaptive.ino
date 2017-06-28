@@ -1,11 +1,20 @@
 //////////////////////// GEM MASTER METRONOME/////////////////////////
 //
 // 19Mar2017 Petr Janata - Completely refactored previous code to:
-//                                                 1. take into account new components of GEM Library
-//                                                        for handling sounds.
-//                                                 2. use of arrays for slaves instead of repeated chunks of code
-//                                                 3. cleaned up interrupt routine handling
-//                                                 4. fixed and simplified adaptive timing mechanism calculations
+//  1. take into account new components of GEM Library for handling sounds.
+//  2. use of arrays for slaves instead of repeated chunks of code
+//  3. cleaned up interrupt routine handling
+//  4. fixed and simplified adaptive timing mechanism calculations
+//
+// 28Jun2017 Scottie Alexander
+//  1. Minor refactoring and performance improvements (helper functions,
+//     reorganized global declarations etc.)
+//  2. Qualified all globals used in ISRs as "volitile", omitting qualifier
+//     doesn't guarantee issues, but qualification *SHOULD* guarantee
+//     correctness
+//  3. Added snippet to send data (metronome tone onset and tap asynchronies)
+//     to ECC via Serial (THIS IS UNTESTD)
+//  *. All changes *SHOULD* be annoted with "NOTE" and "-SA 20170628"
 
 // TODO:
 // 1. Setting of parameters by Experiment Control Computer (ECC)
