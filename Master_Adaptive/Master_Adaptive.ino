@@ -325,7 +325,10 @@ void loop()
             -SA 20170628
             */
 
-            /*NOTE: we first send the scheduled time of the metronome tone for
+            //first byte is the data transfer protocol identifier
+            Serial.write(GEM_DTP_RAW);
+
+            /*NOTE: next, send the scheduled time of the metronome tone for
             this window, which is what the asynchronies are relative too, see
             note below on Serial.write() shenanigans
             -SA 20170628
