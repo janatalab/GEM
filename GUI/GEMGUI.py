@@ -257,7 +257,7 @@ class ExperimentControl(GEMGUIComponent):
         self["runsleft"].set_text(str(self.counter))
     # --------------------------------------------------------------------------
     def format_time(self, t):
-        mins, secs = divmod(t, 60)
+        mins, secs = divmod(np.floor(t), 60)
         return "{:02d}:{:02d}".format(mins, secs)
 
     # --------------------------------------------------------------------------
@@ -305,7 +305,7 @@ class GEMGUI(Frame):
 
         self.presets = presets
         self.presets["run_duration"] = self["windows"] * (self["metronome_tempo"] / 60.0)
-        
+
         self.randomize_alphas()
 
         # Window title
