@@ -12,9 +12,9 @@ presets = {
                         ""
                     ],
     "metronome_alpha": [0, 0.25, 0.5, 0.75, 1],
-    "metronome_tempo": 110,
+    "metronome_tempo": 110, #units: beats-per-minute
     "repeats": 2,
-    "run_duration": 90
+    "windows": 55 #number of windows (55 -> ~100 second runs)
 }
 
 if __name__ == "__main__":
