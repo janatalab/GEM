@@ -41,13 +41,16 @@
 
 #define GEM_TAP_RESET 0
 
-// 
+//
 // Metronome-related constants
 //
 #define GEM_METRONOME_HEURISTIC_AVERAGE 1
 #define GEM_METRONOME_ALPHA 0
 #define GEM_METRONOME_TEMPO 1
 
+//DTP -> data transfer protocol
+//transfer only raw data: metronome time & asynchronies
+#define GEM_DTP_RAW 0x00
 
 // ECC->Arduino data transfer protocol
 // 2-byte header:
