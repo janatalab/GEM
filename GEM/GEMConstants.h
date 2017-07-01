@@ -24,13 +24,12 @@
 
 //
 // GEM Control constants
-// 
+//
 #define GEM_START 1
 #define GEM_STOP 0
 #define GEM_MAX_SLAVES 4
 #define GEM_REQUEST_ACK 1
 #define GEM_HANDSHAKE_TIMEOUT 5
-#define GEM_WRITE_DUR_MS
 #define GEM_SERIAL_BAUDRATE 115200
 
 // Duration (ms) of interrupt pin pulses
