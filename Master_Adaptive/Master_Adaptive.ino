@@ -325,6 +325,13 @@ void loop()
             //     met.next = currentTime - (met.ioi/2);
             // }
 
+            //NOTE: passing the global volitile array <currAsynch> probably
+            //should be avoided if possible, as it is really passing a pointer
+            //to a memory location that is written to within an ISR. we can
+            //make it "safe" by protecting acces to <currAsynch> within the
+            //function (i.e. scheduleNext(), which I have done) but doing it
+            //this way makes the sketchiness unobvious -SA 20170702
+
             // Schedule the next metronome event given our asynchronies, active slaves, and the desired heuristic
             met.scheduleNext(currAsynch, slaveIsConnected, GEM_MAX_SLAVES,
                 GEM_METRONOME_HEURISTIC_AVERAGE);
