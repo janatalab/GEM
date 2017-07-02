@@ -313,20 +313,15 @@ void loop()
         {
             unsigned long last_met = met.next;
 
-            /* NOTE: Not sure about the logic here, met.scheduleNext() appears
-               to overwrite the value of met.next that we set here
-               -SA 20160628
-            */
-            // Catch us up if we have fallen behind
-            if ((met.next + met.ioi + met.ioi/2) < currentTime)
-            {
-                //NOTE: not sure what the cast is doing here, met.isi is an
-                //unsigned long, so met.ioi/2 will perform integer division
-                //yielding an unsigned long (2 gets propoted) and currentTime
-                //is an unsigned long too, so the cast is not needed (especially
-                // a C-style cast) -SA 20180628
-                met.next = long(currentTime - met.ioi/2);
-            }
+            //NOTE: so is this ok to remove? -SA 20170702
+            //NOTE: Not sure about the logic here, met.scheduleNext() appears
+            //to overwrite the value of met.next that we set here
+            // -SA 20160628
+            // // Catch us up if we have fallen behind
+            // if ((met.next + met.ioi + met.ioi/2) < currentTime)
+            // {
+            //     met.next = currentTime - (met.ioi/2);
+            // }
 
             // Schedule the next metronome event given our asynchronies, active slaves, and the desired heuristic
             met.scheduleNext(currAsynch, slaveIsConnected, GEM_MAX_SLAVES,
