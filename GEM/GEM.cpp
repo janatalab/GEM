@@ -54,33 +54,60 @@ Metronome::Metronome()
 
 }
 
-void Metronome::scheduleNext(int asynchArray[], bool isActive[], int numSlaves, int heuristic){
-  int asynchSum = 0;
-  int numResponse = 0;
-  int asynchAdjust;
-  //bool DEBUG = 1;
+void Metronome::scheduleNext(int asynchArray[], bool isActive[],
+    uint8_t numSlaves, uint8_t heuristic)
+{
+    int asynchSum = 0;
+    int numResponse = 0;
+    int asynchAdjust;
+    //bool DEBUG = 1;
 
-  // Accumulate
-  for (int s=0; s < numSlaves; s++){
-    if (isActive[s] && (asynchArray[s] != NO_RESPONSE)){
-      if (heuristic == GEM_METRONOME_HEURISTIC_AVERAGE){
-        asynchSum += asynchArray[s];
-      }
-      numResponse++;
+    // Accumulate
+    for (uint8_t s = 0; s < numSlaves; s++)
+    {
+        //NOTE: the global volatile arrays (currAsynch etc.) are passed by
+        //address (i.e. are pointers within this function) so we need to
+        //protect access to asynchArray just as we would to the globals
+        //in fact, a redesign to avoid use of global volatile arrays would
+        //really be best as passing them around is pretty dangerous
+        //-SA 20170702
+        ScopedVolatileLock lock;
+        if (isActive[s] && (asynchArray[s] != NO_RESPONSE))
+        {
+            if (heuristic == GEM_METRONOME_HEURISTIC_AVERAGE)
+            {
+                asynchSum += asynchArray[s];
+            }
+            numResponse++;
+        }
+
+        //NOTE: <lock> goes out of scope here, allowing interrupts to run after
+        //each iteration is complete -SA 20170702
     }
-  }
 
-  // Calculate the global adjustment
-  if (heuristic == GEM_METRONOME_HEURISTIC_AVERAGE){
-    asynchAdjust = int(asynchSum/numResponse * alpha);
-    if (DEBUG){
-      Serial.print("adj: ");
-      Serial.println(asynchAdjust);
+    // Calculate the global adjustment
+    if (heuristic == GEM_METRONOME_HEURISTIC_AVERAGE)
+    {
+        //NOTE: this performes integer division, then promotion,
+        // then multiplication, then truncation. If floor() was
+        //intended that should be used if precision is important
+        //-SA 20170702
+        asynchAdjust = (int)(asynchSum / numResponse * alpha);
+        if (DEBUG)
+        {
+            Serial.print("adj: ");
+            Serial.println(asynchAdjust);
+        }
     }
-  }
 
-  // Schedule the next time
-  next += ioi + asynchAdjust;
+    //NOTE: use of extra {} for ScopedVolatileLock release the
+    //<lock> immediatly after Metronome::next is written to
+    //-SA 20170702
+    {
+        ScopedVolatileLock lock;
+        // Schedule the next time
+        next += ioi + asynchAdjust;
+    }
 
     // Toggle our flags
     played = false;
