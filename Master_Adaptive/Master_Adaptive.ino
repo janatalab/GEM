@@ -327,9 +327,8 @@ void loop()
             met.scheduleNext(currAsynch, slaveIsConnected, GEM_MAX_SLAVES,
                 GEM_METRONOME_HEURISTIC_AVERAGE);
 
-            //NOTE: again, the cast is unneeded, see note above -SA 201706828
             // when does this window end
-            windowEnds = met.next + long(met.ioi/2);
+            windowEnds = met.next + (met.ioi/2);
 
             // Send data to the ECC
             /*NOTE: each data packet sent to ECC conists of 12 bytes
