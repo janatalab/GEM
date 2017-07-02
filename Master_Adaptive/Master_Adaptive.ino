@@ -311,6 +311,8 @@ void loop()
         // If so, we need to schedule a new metronome event
         if (currentTime >= windowEnds)
         {
+            //NOTE: met.next is read (but NOT set) in as ISR so we don't need to
+            //protect read-only access -SA 20170702
             unsigned long last_met = met.next;
 
             //NOTE: so is this ok to remove? -SA 20170702
