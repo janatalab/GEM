@@ -371,12 +371,51 @@ void loop()
             that this could be quite slow
             -SA 20170628
             */
-            Serial.write((byte *)currAsynch, sizeof (int) * GEM_MAX_SLAVES);
 
-            // reset the current tap times
-            for (uint8_t s = 0; s < GEM_MAX_SLAVES; s++)
+            /*NOTE: this is a good example of how a ScopedVolatileLock should be
+            used. the extra {} creates a new scope so <lock> is released
+            immediatly after Serial.write() is finished (i.e. the {} are
+            *CRITICAL*) -SA 20170702
+            WARNING: the gotcha here is that the actual data transmission
+            relies on an ISR, so this means that no data will be transmitted
+            until after the write is finished (i.e. Serial.write() just moves
+            the data into a buffer which triggers an ISR to perform the send)
+            the alternate method would be to do the loop ourselves and only
+            disable interrupts while we read a value from <currAsynch>
+            -SA 20170702
+            */
             {
-                currAsynch[s] = NO_RESPONSE;
+                ScopedVolatileLock lock;
+                Serial.write((byte *)currAsynch, sizeof (int) * GEM_MAX_SLAVES);
+            }
+
+            /*NOTE: this would be the alternate approach, elements of
+            <currAsynch> are written pseudo-atomically (i.e. each write is
+            protected) but interrupts are allowed to run between writes. the
+            downside of this is a asynch could be overwritten right before
+            we write it even though the window is "over". is that the
+            desired behavior?
+            -SA 20170702
+            */
+            /*
+            for (uint8_t k = 0; k < GEM_MAX_SLAVES; ++k)
+            {
+                ScopedVolatileLock lock;
+                Serial.write((byte *)&currAsynch[k], sizeof (int));
+            }
+            */
+
+            //NOTE: This should also be considered by the group...
+            //Perhaps we should put the lock inside the loop to give
+            //interrupts a small windows to run if disabling them for the
+            //entire loop is a consern -SA 20170702
+            {
+                ScopedVolatileLock lock;
+                // reset the current tap times
+                for (uint8_t s = 0; s < GEM_MAX_SLAVES; s++)
+                {
+                    currAsynch[s] = NO_RESPONSE;
+                }
             }
 
             // Increment our window counter
