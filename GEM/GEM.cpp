@@ -1,9 +1,9 @@
 ///////////////////////////////////////////////////////////////////
 
 /*
-  GEM.cpp - Library of utilities used in GEM projects
-  Wisam Reid, Lauren Fink, David Miranda
-  December 2017
+    GEM.cpp - Library of utilities used in GEM projects
+    Wisam Reid, Lauren Fink, David Miranda
+    December 2017
 
 */
 
@@ -14,42 +14,43 @@
 #include "GEMConstants.h"
 #include "GEM.h"
 #include "GEMreport.h"
+#include "Lock.h"
 ///////////////////////////////////////////////////////////////////
 
 #define DEBUG 0
 
 // GEM constructor
-GEM::GEM(){
-
-}
-
+GEM::GEM() {}
 
 ///////////////////////////////////////////////////////////////////
-
 ////////// METRONOME CLASS //////////
-Metronome::Metronome(){
-  // Specify default values for the metronome
+Metronome::Metronome()
+{
+    // Specify default values for the metronome
 
-  // alpha is the proportion of adaptivity from metronome
-  // (0 = no adaptation; 1 = overly adaptive (unhelpful))
-  // See Fairhurst et al.
-  alpha =  .3;
+    // alpha is the proportion of adaptivity from metronome
+    // (0 = no adaptation; 1 = overly adaptive (unhelpful))
+    // See Fairhurst et al.
+    alpha = 0.3;
 
-  // high threshold for metronome BPM
-  // Note: this cannot be higher than 300 BPM or it crashes
-  BPMmax = 150;
+    // high threshold for metronome BPM
+    // Note: this cannot be higher than 300 BPM or it crashes
+    BPMmax = 150;
 
-  // low threshold for metronome BPM
-  BPMmin = 30;
+    // low threshold for metronome BPM
+    BPMmin = 30;
 
-  // initial ticking bpm
-  BPMinit = 120;
+    // initial ticking bpm
+    BPMinit = 120;
 
-  bpm = BPMinit;
+    bpm = BPMinit;
 
-  ioi = long(60000/bpm);
+    //NOTE: this performs integer division, so if floor was intended
+    //that should be used (not a cast) if precision is important
+    //-SA 20170702
+    ioi = (unsigned long)(60000 / bpm);
 
-  played = false;
+    played = false;
 
 }
 
@@ -81,6 +82,6 @@ void Metronome::scheduleNext(int asynchArray[], bool isActive[], int numSlaves, 
   // Schedule the next time
   next += ioi + asynchAdjust;
 
-  // Toggle our flags
-  played = false;
+    // Toggle our flags
+    played = false;
 };
