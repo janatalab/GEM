@@ -41,6 +41,9 @@
 // GEM reporting object
 #include <GEMreport.h>
 
+// for ScopedVolatileLock
+#include "Lock.h"
+
 // DEFINES for compiler
 #define DEBUG 1
 //#define MAX_SLAVES 4
@@ -141,10 +144,8 @@ void slaveHandshake(void)
 void registerTap(void)
 {
     //NOTE: async times are relative to the "requested" metronome onset
-    //*NOT* the actual onset... -SA 20160628
-    //NOTE: the implicit truncation should be safe here (each async will be <
-    //32767), but it's still not recommended -SA 20160628
-    currAsynch[indexFromPin(arduinoInterruptedPin)] = millis() - met.next;
+    //*NOT* the actual onset... -SA 20160628 (also note the truncation)
+    currAsynch[indexFromPin(arduinoInterruptedPin)] =  (int)(millis() - met.next);
 }
 /* =============================================================================
 Helper functions
@@ -160,14 +161,24 @@ void write_to_slaves(uint8_t val)
 {
     for (uint8_t k = 0; k < GEM_MAX_SLAVES; ++k)
     {
+        //NOTE: this is a bit of a more interesting case, <slaveIsConnected> is
+        //a volatile global (set in the slave handshake ISR) but once it is set
+        //it functions effectivly as read-only (never gets reset) so
+        //'technically' we shouldn't have to protect this with a
+        //ScopedVolatileLock as we don't use this function until well after
+        //<slaveIsConnected> is set... but we'lll throw one in just to be safe
+        //(and performance is not ciritical here) -SA 20170702
+        ScopedVolatileLock lock;
         if (slaveIsConnected[k])
         {
             wire_write(k+1, val);
         }
+
+        //NOTE: <lock> is released (goes out of scope) here on each iteration
+        //-SA 20170702
     }
 }
 /* -------------------------------------------------------------------------- */
-
 ////////////////////////////////////////////////////////////
 ///////////////// ARDUINO Setup() FUNCTION /////////////////
 ////////////////////////////////////////////////////////////
@@ -190,11 +201,23 @@ void setup()
     report.infostr("Checking for connected slaves");
     for (uint8_t s = 0; s < GEM_MAX_SLAVES; s++)
     {
-        // Get the current pin
-        currPin = recPins[s];
+        //NOTE: because the logic here is so procedural (the handshake
+        //interrupt can ONLY be called within a very narrowly define window -
+        //i.e. between the call to enableInterrupt() and disableInterrupt()) I
+        //actually don't think we need to guard access to volatiles (we don't
+        //access any volatiles while the ISR in enabled except currPin which is
+        //not written to in the ISR). The way this works the exchange could be
+        //blocking... but performance here is not critical so I've addded
+        //a lock just to be safe -SA 20170702
+        {
+            ScopedVolatileLock lock;
 
-        // Copy the current slave to global
-        currSlave = s;
+            // Get the current pin
+            currPin = recPins[s];
+
+            // Copy the current slave to global
+            currSlave = s;
+        }
 
         // Enable the interrupt on the pin that we're expecting to receive acknowledgement on
         enableInterrupt(currPin, slaveHandshake, RISING);
