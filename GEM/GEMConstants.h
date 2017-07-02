@@ -39,14 +39,16 @@
 #define GEM_STOP_EXP 0xfe     //254
 #define GEM_QUERY_STATE 0xfd  //253
 
-#define GEM_TAP_RESET 0
+#define GEM_TAP_RESET 0x00
 
 //
 // Metronome-related constants
 //
-#define GEM_METRONOME_HEURISTIC_AVERAGE 1
-#define GEM_METRONOME_ALPHA 0
-#define GEM_METRONOME_TEMPO 1
+//NOTE: the heuristic should be 1-byte, (256 options seem sufficient) if that
+//changes make sure to change Metronome::scheduleNext signiture
+#define GEM_METRONOME_HEURISTIC_AVERAGE 0x01
+#define GEM_METRONOME_ALPHA 0x00
+#define GEM_METRONOME_TEMPO 0x01
 
 //DTP -> data transfer protocol
 //transfer only raw data: metronome time & asynchronies
