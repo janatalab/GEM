@@ -387,30 +387,7 @@ void loop()
             {
                 ScopedVolatileLock lock;
                 Serial.write((byte *)currAsynch, sizeof (int) * GEM_MAX_SLAVES);
-            }
 
-            /*NOTE: this would be the alternate approach, elements of
-            <currAsynch> are written pseudo-atomically (i.e. each write is
-            protected) but interrupts are allowed to run between writes. the
-            downside of this is a asynch could be overwritten right before
-            we write it even though the window is "over". is that the
-            desired behavior?
-            -SA 20170702
-            */
-            /*
-            for (uint8_t k = 0; k < GEM_MAX_SLAVES; ++k)
-            {
-                ScopedVolatileLock lock;
-                Serial.write((byte *)&currAsynch[k], sizeof (int));
-            }
-            */
-
-            //NOTE: This should also be considered by the group...
-            //Perhaps we should put the lock inside the loop to give
-            //interrupts a small windows to run if disabling them for the
-            //entire loop is a consern -SA 20170702
-            {
-                ScopedVolatileLock lock;
                 // reset the current tap times
                 for (uint8_t s = 0; s < GEM_MAX_SLAVES; s++)
                 {
