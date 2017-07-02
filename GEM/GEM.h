@@ -84,8 +84,13 @@ public:
     // volatile qualified -SA 20170628
     volatile unsigned long next;
 
+    //NOTE: changed numSlaves and heuristic to 1-byte as 0-255 seems more than
+    //enough for both (both are defines in GEMConstants which is currently
+    //included in GEM.cpp so we don't actually need to pass them at all)
+    //-SA 20170702
     // Functions
-    void scheduleNext(int asynchArray[], bool isActive[], int numSlaves, int heuristic);
+    void scheduleNext(int asynchArray[], bool isActive[], uint8_t numSlaves,
+        uint8_t heuristic);
 };
 
 ///////////////////////////////////////////////////////////////////
