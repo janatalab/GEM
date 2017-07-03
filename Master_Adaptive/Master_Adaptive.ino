@@ -45,7 +45,9 @@
 #include "Lock.h"
 
 // DEFINES for compiler
-#define DEBUG 1
+// #define DEBUG
+#undef DEBUG
+
 //#define MAX_SLAVES 4
 //#define HANDSHAKE_TIMEOUT 5
 
@@ -232,9 +234,10 @@ void setup()
         // check whether we successfully had slave communicate on designated pin
         if (slaveIsConnected[currSlave])
         {
+#ifdef DEBUG
             Serial.print("Found slave using interrupt: ");
             Serial.println(currPin);
-
+#endif
             // Attach our desired ISR
             enableInterrupt(currPin, registerTap, RISING);
         }
@@ -247,21 +250,26 @@ void setup()
         }
     } // for (int s = 0; s < GEM_MAX_SLAVES; s++)
 
+#ifdef DEBUG
     // Report on number of active slaves
     Serial.print("#active slaves: ");
     Serial.println(numSlaves);
+#endif
 
     // Initialize the sound card
     sound.setupSDCard();
 
+#ifdef DEBUG
     // Load a sound file
-    if (DEBUG) { report.infostr("Loading sound file"); }
+    report.infostr("Loading sound file");
+#endif
 
     sound.loadByName(soundName);
 
-    if (DEBUG) { report.infostr("Done loading sound file"); }
-
+#ifdef DEBUG
+    report.infostr("Done loading sound file");
     Serial.println("Send 1 from console to start");
+#endif
 } // setup()
 
 //////////////////////////////////////////////////////////////////
@@ -295,10 +303,11 @@ void loop()
             case UNMUTE_SOUND:
                 write_to_slaves(UNMUTE_SOUND);
                 break;
-
+#ifdef DEBUG
             default:
                 Serial.print("Unknown msg: ");
                 Serial.println(msg);
+#endif
         }
     }
 
@@ -394,23 +403,22 @@ void loop()
             // Increment our window counter
             window++;
 
-            if (DEBUG)
-            {
-                Serial.print("Scheduled ");
-                Serial.print(window);
-                Serial.print(": ");
-                Serial.println(met.next);
-            }
+#ifdef DEBUG
+            Serial.print("Scheduled ");
+            Serial.print(window);
+            Serial.print(": ");
+            Serial.println(met.next);
+#endif
         } // if (currentTime >= windowEnds)
 
         // Check whether we have passed the scheduled metronome time
         if ((currentTime >= met.next) && !met.played)
         {
-            if (DEBUG)
-            {
-                //Serial.print("Played: ");
-                Serial.println(currentTime);
-            }
+#ifdef DEBUG
+            //Serial.print("Played: ");
+            Serial.println(currentTime);
+#endif
+
             sound.play(); // play the sound
 
             met.played = true; // flag that it has been played
