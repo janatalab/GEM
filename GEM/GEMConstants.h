@@ -13,11 +13,6 @@
 #define ERR_WAVEHC_OPEN_BY_INDEX 104
 #define ERR_WAVEHC_WAVE_CREATE 105
 
-
-// Sound-related constants
-#define MUTE_SOUND 1000
-#define UNMUTE_SOUND 1001
-
 // Response-related constants
 #define NO_RESPONSE -32000
 
@@ -25,10 +20,17 @@
 //
 // GEM Control constants
 //
-#define GEM_START 1
-#define GEM_STOP 0
+#define GEM_STOP 0x00
+#define GEM_START 0x01
+#define GEM_REQUEST_ACK 0x02
+
+// Sound-related constants (should be sinlge byte unless there is strong
+// reason for multi-byte int)
+#define MUTE_SOUND 0x03 //1000
+#define UNMUTE_SOUND 0x04 //1001
+
 #define GEM_MAX_SLAVES 4
-#define GEM_REQUEST_ACK 1
+
 #define GEM_HANDSHAKE_TIMEOUT 5
 #define GEM_SERIAL_BAUDRATE 115200
 
