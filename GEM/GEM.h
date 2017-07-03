@@ -89,7 +89,7 @@ public:
     //included in GEM.cpp so we don't actually need to pass them at all)
     //-SA 20170702
     // Functions
-    void scheduleNext(int asynchArray[], bool isActive[], uint8_t numSlaves,
+    void scheduleNext(volatile int asynchArray[], volatile bool isActive[], uint8_t numSlaves,
         uint8_t heuristic);
 };
 
