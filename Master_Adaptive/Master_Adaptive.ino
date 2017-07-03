@@ -315,15 +315,11 @@ void loop()
             //protect read-only access -SA 20170702
             unsigned long last_met = met.next;
 
-            //NOTE: so is this ok to remove? -SA 20170702
-            //NOTE: Not sure about the logic here, met.scheduleNext() appears
-            //to overwrite the value of met.next that we set here
-            // -SA 20160628
-            // // Catch us up if we have fallen behind
-            // if ((met.next + met.ioi + met.ioi/2) < currentTime)
-            // {
-            //     met.next = currentTime - (met.ioi/2);
-            // }
+            // Catch us up if we have fallen behind
+            if ((met.next + met.ioi + met.ioi/2) < currentTime)
+            {
+                met.next = currentTime - (met.ioi/2);
+            }
 
             //NOTE: passing the global volitile array <currAsynch> probably
             //should be avoided if possible, as it is really passing a pointer
