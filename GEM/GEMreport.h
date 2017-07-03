@@ -1,6 +1,6 @@
 // GEMreport.h
 //
-// Interface for reporting stuff 
+// Interface for reporting stuff
 
 // 19Mar2017 Petr Janata
 
@@ -24,11 +24,11 @@
 class GEMReport {
 public:
 	// Constructor
-	GEMReport(); 
+	GEMReport();
 
 	// Functions
 	void error(int error_code);
-	void infostr(char *str);
+	void infostr(const char *str);
 };
 
 #endif
