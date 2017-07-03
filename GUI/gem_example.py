@@ -1,9 +1,9 @@
 from GEMGUI import GEMGUI
 
 presets = {
-    "serial": {"port": "/dev/ttyACM0", "baud_rate", 115200, "timeout", 5},
-    "filename": "data"
-    "data_dir": "<data_dir>",
+    "serial": {"port": "/dev/cu.usbmodem1421", "baud_rate": 115200, "timeout": 5},
+    "filename": "data",
+    "data_dir": "/Users/laurenfink/Documents/Arduino/",
     # "sound_dir": "<sound_dir>",
     "slaves_requested": 3, #NB: only 3 slaves working in Davis rig
     #"master_sound": "1.WAV",
