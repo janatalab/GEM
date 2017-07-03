@@ -6,10 +6,6 @@
 # Run gem_example.py to view current GUI
 
 # TODO:
-#   1) run headers
-#   2) finish cleanups
-#   3) finish abort / start run functions
-#   4) receive data on data viewer
 
 import Tkinter
 from Tkinter import Tk, Label, Button, Entry, StringVar, Frame, OptionMenu, Text
@@ -17,14 +13,17 @@ import numpy as np
 from datetime import date, datetime
 from threading import Timer, Lock, Condition
 from copy import copy
+import os
 
-import GEMSerial
+from GEMIO import GEMDataFile, GEMAcquisition
 
 
 def get_date():
     return date.today().strftime("%Y%m%d")
+
 def get_time():
     return datetime.now().strftime("%H:%M:%S")
+
 # ==============================================================================
 # Class of general utilities for constructing core aspects of GUI components
 class GEMGUIComponent(Frame):
@@ -107,6 +106,7 @@ class TextBoxGroup(Frame):
 
     def enable(self):
         self.entry["state"] = Tkinter.NORMAL
+
 # ==============================================================================
 # class to create text (left) and button (right)
 class TextButtonGroup(Frame):
@@ -203,7 +203,7 @@ class ExperimentControl(GEMGUIComponent):
         self.set_title("Experiment Control Panel")
 
         # Start and Escape buttons
-        spec = {"Start": self.start_exp, "Abort": self.abort_exp}
+        spec = {"Start": self.start_run, "Abort": self.abort_run}
         self.add_row("ss", ButtonGroup(self, spec, 39))
 
         # Time remaining in run countdown
@@ -233,39 +233,71 @@ class ExperimentControl(GEMGUIComponent):
         # to write experiment data
 
     # --------------------------------------------------------------------------
-    def start_exp(self):
+    def start_run(self):
         # disable start button
         self["ss"].disable("Start")
 
-        data_dir = os.path.join(self.parent["data_dir"], get_date())
-        if not os.path.exists(data_dir):
-            os.mkdir(data_dir)
+        # if this is the first run, init the data file and write the file header
+        if self.counter == self.nruns:
 
-        filepath = os.path.join(data_dir, self.parent["filename"] + ".gdf")
+            data_dir = os.path.join(self.parent["data_dir"], get_date())
+            if not os.path.exists(data_dir):
+                os.mkdir(data_dir)
 
-        if not os.path.exists(filepath):
-            self.parent.write_file_header(filepath)
+            filepath = os.path.join(data_dir, self.parent["filename"] + ".gdf")
+            self.data_file = GEMDataFile(filepath)
 
-        self.itc = ITC()
-        self.acq = GEMAcquisition(itc, self.parent.presets, filepath)
+            bi = self.parent.basic_info
+
+            d = copy(self.parent.presets)
+            d["subject_ids"] = bi.get_subjids()
+            d["experimenter_id"] = bi.get_experimenter()
+            d["date"] = get_date()
+            d["time"] = get_time()
+
+            self.data_file.write_file_header(d, self.nruns)
+
+        # write run header
+        self.data_file.write_header(
+            {
+                "run_number": self.nruns - self.counter,
+                "start_time": get_time()
+            }
+        )
+
+        # class for communicating with the IO thread for this run
+        self.itc = ITC(self.parent.data_viewer)
+
+        # the actual IO thread
+        self.acq = GEMAcquisition(self.itc,
+            self.data_file.filepath,
+            self.parent.presets
+        )
         self.acq.start()
 
-        self.parent.register_cleanup(itc.done)
+        self.parent.register_cleanup("abort_run", self.close_request)
 
         # begin countdown clock (in python)
         self.time_remaining = self.parent["run_duration"]
         self.update_countdown()
 
     # --------------------------------------------------------------------------
-    def abort_exp(self):
-        self.clean_up()
+    def close_request(self):
+        # tell parent not to close the window (forces user to click abort first)
+        return False
+
+    # --------------------------------------------------------------------------
+    def abort_run(self):
         self.itc.done()
+        self.clean_up()
 
     # --------------------------------------------------------------------------
     def clean_up(self):
-        self["ss"].enable("Start")
+        self.acq.join()
         self.timer.cancel()
         self["timeleft"].set_text("00:00")
+        self.parent.unregister_cleanup("abort_run")
+        self["ss"].enable("Start")
 
     # --------------------------------------------------------------------------
     def end_run(self):
@@ -275,7 +307,7 @@ class ExperimentControl(GEMGUIComponent):
 
     # --------------------------------------------------------------------------
     def format_time(self, t):
-        mins, secs = divmod(np.floor(t), 60)
+        mins, secs = divmod(int(np.floor(t)), 60)
         return "{:02d}:{:02d}".format(mins, secs)
 
     # --------------------------------------------------------------------------
@@ -294,7 +326,7 @@ class ExperimentControl(GEMGUIComponent):
             self.end_run()
 
         #TODO send code to arduino to stop. re-enable start button.
-        # or just return flag to start_exp function to that it ends this run,
+        # or just return flag to start_run function to that it ends this run,
         # increments run counter, etc.
 
 # ==============================================================================
@@ -318,7 +350,7 @@ class BasicInfo(GEMGUIComponent):
     def get_subjids(self):
         ids = list()
         for k in range(0, self.nsubj):
-            ids.append(self["subjid-" + str(k)].get_text())
+            ids.append(self["subjid-" + str(k+1)].get_text())
 
         return ids
 
@@ -328,35 +360,26 @@ class BasicInfo(GEMGUIComponent):
 # ==============================================================================
 # Inter-thread-communicator
 class ITC:
-    def __init__(self):
-        self.cv = Condition()
-        self.lock = Lock()
-        self.msg = -1
-        self.done = False
+    def __init__(self, viewer):
+        self.viewer_lock = Lock()
+        self.done_lock = Lock()
+        self.isdone = False
+        self.viewer = viewer
 
     def send_message(self, msg):
-        self.cv.acquire()
-        self.msg = msg
-        self.cv.notify()
-        self.cv.release()
-
-    def wait_message(self):
-        self.cv.acquire()
-        while self.msg < 0:
-            self.cv.wait()
-        msg = self.msg
-        cv.release()
-        return ("[REC]: Received %d bytes!" % msg)
+        self.viewer_lock.acquire()
+        self.viewer.writeToViewer("[REC]: Received %d bytes!" % msg)
+        self.viewer_lock.release()
 
     def done(self):
-        self.lock.acquire()
-        self.done = True
-        self.lock.release()
+        self.done_lock.acquire()
+        self.isdone = True
+        self.done_lock.release()
 
     def check_done(self):
-        self.lock.acquire()
-        ret = self.done
-        self.lock.release()
+        self.done_lock.acquire()
+        ret = self.isdone
+        self.done_lock.release()
         return ret
 
 # ==============================================================================
@@ -376,7 +399,7 @@ class GEMGUI(Frame):
         self.root.title("GEM Arduino acquisition system")
         self.grid()
 
-        self.cleanup = list()
+        self.cleanup = dict()
 
         # Add relevant modules
         self.basic_info = BasicInfo(self, self.presets["slaves_requested"])
@@ -391,8 +414,12 @@ class GEMGUI(Frame):
         else:
             raise Exception("No key \"" + str(key) + "\" in presets!")
 
-    def register_cleanup(self, f):
-        self.cleanup.append(f)
+    def register_cleanup(self, k, f):
+        self.cleanup[k] = f
+
+    def unregister_cleanup(self, k):
+        if k in self.cleanup:
+            self.cleanup.pop(k)
 
     def randomize_alphas(self):
         self.alphas = np.repeat(self["metronome_alpha"], self["repeats"])
@@ -401,27 +428,10 @@ class GEMGUI(Frame):
     def show(self, msg):
         self.data_viewer.writeToViewer(msg)
 
-    def write_file_header(self, filpath):
-
-        d = copy(self.presets)
-        d["subject_ids"] = basic_info.get_subjids()
-        d["experimenter_id"] = basic_info.get_experimenter()
-        d["date"] = get_date()
-        d["time"] = get_time()
-        hdr = json.dumps(d)
-
-        nel = len(hdr)
-
-        with open(filepath, "w") as io:
-            for k in range(0, 64, 8):
-                io.write(chr((nel >> k) & 0xff))
-
-            io.write(hdr)
-
     def on_close(self):
-        doclose = true
-        for f in self.cleanup:
-            doclose = f() && doclose
+        doclose = True
+        for f in self.cleanup.values():
+            doclose = f() and doclose
 
         if doclose:
             root.destroy()
