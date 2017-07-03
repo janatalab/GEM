@@ -12,13 +12,17 @@ GEMReport::GEMReport() {
 }
 
 void GEMReport::error(int error_code){
+#ifdef DEBUG
 	// Transmit the error code via the Serial interface
 	Serial.print("Error: ");
 	Serial.println(error_code);
+#endif
 };
 
-void GEMReport::infostr(char *str){
+void GEMReport::infostr(const char *str){
+#ifdef DEBUG
 	// Transmit the error code via the Serial interface
 	Serial.print("Info: ");
 	Serial.println(str);
+#endif
 };
