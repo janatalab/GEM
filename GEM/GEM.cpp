@@ -54,7 +54,7 @@ Metronome::Metronome()
 
 }
 
-void Metronome::scheduleNext(int asynchArray[], bool isActive[],
+void Metronome::scheduleNext(volatile int asynchArray[], volatile bool isActive[],
     uint8_t numSlaves, uint8_t heuristic)
 {
     int asynchSum = 0;
@@ -93,11 +93,10 @@ void Metronome::scheduleNext(int asynchArray[], bool isActive[],
         //intended that should be used if precision is important
         //-SA 20170702
         asynchAdjust = (int)(asynchSum / numResponse * alpha);
-        if (DEBUG)
-        {
-            Serial.print("adj: ");
-            Serial.println(asynchAdjust);
-        }
+#ifdef DEBUG
+        Serial.print("adj: ");
+        Serial.println(asynchAdjust);
+#endif
     }
 
     //NOTE: use of extra {} for ScopedVolatileLock release the
