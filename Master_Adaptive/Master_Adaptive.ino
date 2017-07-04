@@ -79,9 +79,7 @@ unsigned long currentTime;
 
 // Time that the next window ends (met.next + met.ioi/2)
 unsigned long windowEnds = 0;
-unsigned long window = 0; // NOTE: why is this an unsigned long? - LF 20170703
-                         // couldn't it be an int? Don't think we will need
-                        // more windows than two bytes worth, will we?
+uint16_t window = 0x0000;
 
 /* =============================================================================
 Volatile globals
@@ -287,7 +285,8 @@ void loop()
     // Check whether there is any message from the ECC
     if (Serial.available())
     {
-        int msg = Serial.parseInt();
+        // changed parseInt to read() because parseInt requires long - LF 20170704
+        uint8_t msg = (uint8_t)Serial.read();
         switch (msg)
         {
             case GEM_STOP:
@@ -340,19 +339,15 @@ void loop()
             //this way makes the sketchiness unobvious -SA 20170702
 
             // Schedule the next metronome event given our asynchronies, active slaves, and the desired heuristic
-            met.scheduleNext(currAsynch, slaveIsConnected, GEM_MAX_SLAVES,
-                GEM_METRONOME_HEURISTIC_AVERAGE);
+            int asynchAdjust = met.scheduleNext(
+                currAsynch,
+                slaveIsConnected,
+                GEM_MAX_SLAVES,
+                GEM_METRONOME_HEURISTIC_AVERAGE
+            );
 
             // when does this window end
             windowEnds = met.next + (met.ioi/2);
-
-            // Send current window to ECC - 20170703 LF
-            // first byte will be window code
-            // next 4 bytes will be window number (unsigned long)
-            // I think this should be int instead
-            //first byte is the data transfer protocol identifier
-            Serial.write(GEM_WINDOW);
-            Serial.write(window);
 
 
             // Send data to the ECC
@@ -369,6 +364,9 @@ void loop()
 
             //first byte is the data transfer protocol identifier
             Serial.write(GEM_DTP_RAW);
+
+            // Send current window to ECC - 20170703 LF
+            Serial.write(window);
 
             /*NOTE: next, send the scheduled time of the metronome tone for
             this window, which is what the asynchronies are relative too, see
@@ -404,20 +402,15 @@ void loop()
                 ScopedVolatileLock lock;
                 Serial.write((byte *)currAsynch, sizeof (int) * GEM_MAX_SLAVES);
 
+                // Send calculated metronome adjustment to ECC
+                Serial.write((byte *)&asynchAdjust, sizeof (int));
+
                 // reset the current tap times
                 for (uint8_t s = 0; s < GEM_MAX_SLAVES; s++)
                 {
                     currAsynch[s] = NO_RESPONSE;
                 }
             }
-
-            // Send calculated metronome adjustment to ECC
-            // first byte = identifer (constant code)
-            // next four bytes = intended time of next metronome click (unsigned long)
-            // added 20170703 - LF
-            Serial.write(GEM_METRONOME_ADJUST);
-            Serial.write(met.next);
-            //Serial.write(met.asynchAdjust); // we don't have access to this..
 
             // Increment our window counter
             window++;
