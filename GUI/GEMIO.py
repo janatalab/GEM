@@ -131,6 +131,21 @@ class GEMAcquisition(Thread):
 
                 n = io.available()
                 if n > 0:
+                    # read into buffer
+
+                    # interpret message header (need to assure only master sending in loop)
+                        # have dict lookup table for how many bytes expecting
+
+                        #pySerial Question: does other side know how many bytes arduino intended to send?
+
+                    # parse message (write to formatted string)
+                        # send str to text file and data viewer
+
+                    # could add end of message signal (255)
+
+                    # check length of byte stream and if end of message byte,
+                        #if not raise error and end run?
+
                     io.commit(n)
                     # notify data viewer that we've received some data
                     self.itc.send_message(n)
@@ -138,3 +153,5 @@ class GEMAcquisition(Thread):
                 sleep(0.001)
 
             io.send(GEM_STOP)
+
+            # call itc.done when laster window 
