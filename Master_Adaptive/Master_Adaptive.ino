@@ -79,7 +79,9 @@ unsigned long currentTime;
 
 // Time that the next window ends (met.next + met.ioi/2)
 unsigned long windowEnds = 0;
-unsigned long window = 0;
+unsigned long window = 0; // NOTE: why is this an unsigned long? - LF 20170703
+                         // couldn't it be an int? Don't think we will need
+                        // more windows than two bytes worth, will we?
 
 /* =============================================================================
 Volatile globals
@@ -344,6 +346,15 @@ void loop()
             // when does this window end
             windowEnds = met.next + (met.ioi/2);
 
+            // Send current window to ECC - 20170703 LF
+            // first byte will be window code
+            // next 4 bytes will be window number (unsigned long)
+            // I think this should be int instead
+            //first byte is the data transfer protocol identifier
+            Serial.write(GEM_WINDOW);
+            Serial.write(window);
+
+
             // Send data to the ECC
             /*NOTE: each data packet sent to ECC conists of 12 bytes
                 -4 for the metronome tone onset (Long on Uno is 4 bytes)
@@ -399,6 +410,13 @@ void loop()
                     currAsynch[s] = NO_RESPONSE;
                 }
             }
+
+            // Send calculated metronome adjustment to ECC
+            // first byte = identifer (constant code)
+            // next two bytes = asynchAdjust (int)
+            // added 20170703 - LF
+            Serial.write(GEM_METRONOME_ADJUST);
+            Serial.write(met.asynchAdjust);
 
             // Increment our window counter
             window++;
