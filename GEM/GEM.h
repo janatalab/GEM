@@ -17,33 +17,33 @@
 
 ///////////////////////////////////////////////////////////////////
 
-// class GEM {
-//
-//   public:
-//     // constructor
-//     GEM();
-//
-//     // Variables
-//
-//     //////// FUNCTIONS
-//     void getGemInfo(void);
-//
-//   protected:
-//
-//     //////// CLASS VARIABLES
-//     int gemType;                    // Slave = 1, Master = 2
-//     int FSRpin;                     // analog pin for FSR input
-//     int sendPin;                    // sends an interrupt on this pin
-//     int I2C_Address;                // Unique address for slave boards, set to zero for master
-//
-//     static void receiveI2CEvent(int byteCount); // must be static to be passed into Wire library function
-//
-//     void printGemType(void);
-//     void printI2CAddress(void);
-//     void printPins(void);
-//     int getI2CAddress(void);
-//
-// };
+class GEM {
+
+  public:
+    // constructor
+    GEM();
+
+    // Variables
+
+    //////// FUNCTIONS
+  //   void getGemInfo(void);
+  //
+  // protected:
+
+    //////// CLASS VARIABLES
+    // int gemType;                    // Slave = 1, Master = 2
+    // int FSRpin;                     // analog pin for FSR input
+    // int sendPin;                    // sends an interrupt on this pin
+    // int I2C_Address;                // Unique address for slave boards, set to zero for master
+
+    //static void receiveI2CEvent(int byteCount); // must be static to be passed into Wire library function
+
+    // void printGemType(void);
+    // void printI2CAddress(void);
+    // void printPins(void);
+    // int getI2CAddress(void);
+
+};
 //NOTE: everythinc commented above is no longer necessary and should be deleted
 // - LF 20170703
 
