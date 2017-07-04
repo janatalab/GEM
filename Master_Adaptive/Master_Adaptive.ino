@@ -413,10 +413,11 @@ void loop()
 
             // Send calculated metronome adjustment to ECC
             // first byte = identifer (constant code)
-            // next two bytes = asynchAdjust (int)
+            // next four bytes = intended time of next metronome click (unsigned long)
             // added 20170703 - LF
             Serial.write(GEM_METRONOME_ADJUST);
-            Serial.write(met.asynchAdjust);
+            Serial.write(met.next);
+            //Serial.write(met.asynchAdjust); // we don't have access to this..
 
             // Increment our window counter
             window++;
