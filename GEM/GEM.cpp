@@ -17,8 +17,6 @@
 #include "Lock.h"
 ///////////////////////////////////////////////////////////////////
 
-#define DEBUG 0
-
 // GEM constructor
 GEM::GEM() {}
 
@@ -54,7 +52,7 @@ Metronome::Metronome()
 
 }
 
-void Metronome::scheduleNext(volatile int asynchArray[], volatile bool isActive[],
+int Metronome::scheduleNext(volatile int asynchArray[], volatile bool isActive[],
     uint8_t numSlaves, uint8_t heuristic)
 {
     int asynchSum = 0;
@@ -110,4 +108,6 @@ void Metronome::scheduleNext(volatile int asynchArray[], volatile bool isActive[
 
     // Toggle our flags
     played = false;
+
+    return asynchAdjust;
 };
