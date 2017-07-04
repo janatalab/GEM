@@ -17,6 +17,13 @@ void GEMReport::error(int error_code){
 	Serial.print("Error: ");
 	Serial.println(error_code);
 #endif
+
+    // Send error to ECC - LF added 20170703
+    //first byte is the data transfer protocol identifier
+    Serial.write(GEM_ERR);
+
+    //second byte is the error code from GEM constants
+    Serial.write(error_code);
 };
 
 void GEMReport::infostr(const char *str){
