@@ -13,9 +13,16 @@ presets = {
     #                     "1.WAV"
     #                 ],
     "metronome_alpha": [0, 0.25, 0.5, 0.75, 1],
-    "metronome_tempo": 110, #units: beats-per-minute
-    "repeats": 2,
-    "windows": 55 #number of windows (55 -> ~100 second runs)
+    "metronome_tempo": 100.0, #units: beats-per-minute
+    "repeats": 2.0,
+    "windows": 50.0, #number of windows
+
+    # TODO: deal with audio_feedback
+    # control the master sound, send message to experimenter through data viewer
+    # run trials blocked by audio feeback. randomize order of audio feedback
+    "audio_feedback": ["hear_none", "hear_self", "hear_all"],
+    "metronome_heuristic": ["average"] # more to come
+
 }
 
 if __name__ == "__main__":
