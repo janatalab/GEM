@@ -391,7 +391,7 @@ class GEMGUI(Frame):
         Frame.__init__(self, self.root)
 
         self.presets = presets
-        self.presets["run_duration"] = self["windows"] * (self["metronome_tempo"] / 60.0)
+        self.presets["run_duration"] = self["windows"] / self["metronome_tempo"] * 60.0
 
         self.randomize_alphas()
 
