@@ -48,8 +48,8 @@
 #define GEM_METRONOME_HEURISTIC_AVERAGE 0x01
 #define GEM_METRONOME_ALPHA 0x00
 #define GEM_METRONOME_TEMPO 0x01
-#define GEM_WINDOW 0x0A //10
-#define GEM_METRONOME_ADJUST 0x0B //11
+//#define GEM_WINDOW 0x0A //10
+//#define GEM_METRONOME_NEXT 0x0B //11
 
 // DTP -> data transfer protocol
 // transfer only raw data: metronome time & asynchronies
