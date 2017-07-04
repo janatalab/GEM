@@ -15,6 +15,10 @@ from threading import Timer, Lock, Condition
 from copy import copy
 import os
 
+import serial
+from time import time
+# from time import sleep
+
 from GEMIO import GEMDataFile, GEMAcquisition
 
 
@@ -268,12 +272,15 @@ class ExperimentControl(GEMGUIComponent):
         # class for communicating with the IO thread for this run
         self.itc = ITC(self.parent.data_viewer)
 
+        print("created ITC object")
+
         # the actual IO thread
         self.acq = GEMAcquisition(self.itc,
             self.data_file.filepath,
             self.parent.presets
         )
         self.acq.start()
+        print("spawned thread")
 
         self.parent.register_cleanup("abort_run", self.close_request)
 
@@ -434,7 +441,7 @@ class GEMGUI(Frame):
             doclose = f() and doclose
 
         if doclose:
-            root.destroy()
+            self.root.destroy()
 
 
 # ==============================================================================

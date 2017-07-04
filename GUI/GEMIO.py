@@ -3,6 +3,7 @@ from time import time, sleep
 import json
 import serial
 
+# would like to import GEMConstants.h instead. Look into h2py - LF 20170703
 GEM_START = '\x01'
 GEM_STOP = '\x00'
 
@@ -77,11 +78,15 @@ class GEMIOManager:
         # the actual GEMIO resource
         class GEMIOResource:
             def __init__(self, ifo, filepath):
+                print(ifo)
                 self.com = serial.Serial(
-                    ifo["port"],
-                    ifo["baud_rate"],
-                    ifo["timeout"]
+                    port=ifo["port"],
+                    baudrate=ifo["baud_rate"],
+                    timeout=ifo["timeout"]
                 )
+
+                if self.com.isOpen():
+                    print("serial is open!")
 
                 self.file = open(filepath, "ab")
 
@@ -90,7 +95,11 @@ class GEMIOManager:
                 self.file.close()
 
             def send(self, msg):
+                print("sending %d to arduino" % ord(msg[0]))
                 self.com.write(msg)
+
+            def flush(self):
+                self.com.flush()
 
             def commit(self, n):
                 self.file.write(self.com.read(n))
@@ -123,35 +132,25 @@ class GEMAcquisition(Thread):
     def run(self):
         with GEMIOManager(self.serial_ifo, self.filepath) as io:
 
+            # allow some time for handshake!
+            io.com.readline()
+
             # tell the master to start the experiment
             io.send(GEM_START)
 
             tstart = time()
-            while (not self.itc.check_done()) and (time() < (tstart + self.run_duration)):
+            done = self.itc.check_done()
+            while (not done) and (time() < (tstart + self.run_duration)):
 
                 n = io.available()
                 if n > 0:
-                    # read into buffer
-
-                    # interpret message header (need to assure only master sending in loop)
-                        # have dict lookup table for how many bytes expecting
-
-                        #pySerial Question: does other side know how many bytes arduino intended to send?
-
-                    # parse message (write to formatted string)
-                        # send str to text file and data viewer
-
-                    # could add end of message signal (255)
-
-                    # check length of byte stream and if end of message byte,
-                        #if not raise error and end run?
-
                     io.commit(n)
+
                     # notify data viewer that we've received some data
                     self.itc.send_message(n)
+                    print("Sending to itc: %d" % n)
 
-                sleep(0.001)
+                done = self.itc.check_done()
+                io.com.flushOutput()
 
             io.send(GEM_STOP)
-
-            # call itc.done when laster window 

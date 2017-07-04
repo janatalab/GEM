@@ -1,4 +1,6 @@
 from GEMGUI import GEMGUI
+import serial
+from time import time
 
 presets = {
     "serial": {"port": "/dev/cu.usbmodem1421", "baud_rate": 115200, "timeout": 5},
@@ -25,6 +27,16 @@ presets = {
 
 }
 
+# Dictionary containing number of bytes expected following each identifier code
+# (not including the identifier byte)
+byte_codes = {
+    "GEM_DTP_RAW": 12.0,
+    "GEM_WINDOW": 4.0, ## this might change to 2
+    "GEM_ERR": 1.0,
+    "GEM_METRONOME_NEXT": 4.0
+}
+
 if __name__ == "__main__":
+
     g = GEMGUI(presets)
     g.mainloop()
