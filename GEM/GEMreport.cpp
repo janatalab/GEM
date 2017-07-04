@@ -6,6 +6,7 @@
 
 #include "Arduino.h"
 #include "GEMreport.h"
+#include "GEMConstants.h"
 
 GEMReport::GEMReport() {
 	//Serial.begin(9600);
