@@ -206,6 +206,8 @@ class ExperimentControl(GEMGUIComponent):
 
         self.set_title("Experiment Control Panel")
 
+        # TODO: implement set-up button and appropriate callback?
+
         # Start and Escape buttons
         spec = {"Start": self.start_run, "Abort": self.abort_run}
         self.add_row("ss", ButtonGroup(self, spec, 39))
@@ -248,9 +250,6 @@ class ExperimentControl(GEMGUIComponent):
             if not os.path.exists(data_dir):
                 os.mkdir(data_dir)
 
-            filepath = os.path.join(data_dir, self.parent["filename"] + ".gdf")
-            self.data_file = GEMDataFile(filepath)
-
             bi = self.parent.basic_info
 
             d = copy(self.parent.presets)
@@ -258,6 +257,12 @@ class ExperimentControl(GEMGUIComponent):
             d["experimenter_id"] = bi.get_experimenter()
             d["date"] = get_date()
             d["time"] = get_time()
+
+            # added subid1 to filename - LF
+            filepath = os.path.join(data_dir, self.parent["filename"] + d["subject_ids"][0] +".gdf")
+
+            #TODO add conditional about this path already existing (in GEMIO?)
+            self.data_file = GEMDataFile(filepath)
 
             self.data_file.write_file_header(d, self.nruns)
 
@@ -401,6 +406,7 @@ class GEMGUI(Frame):
         self.presets["run_duration"] = self["windows"] / self["metronome_tempo"] * 60.0
 
         self.randomize_alphas()
+        self.get_IOI()
 
         # Window title
         self.root.title("GEM Arduino acquisition system")
@@ -427,6 +433,9 @@ class GEMGUI(Frame):
     def unregister_cleanup(self, k):
         if k in self.cleanup:
             self.cleanup.pop(k)
+
+    def get_IOI(self):
+        self.presets["ioi"] = int(60000 / self["metronome_tempo"])
 
     def randomize_alphas(self):
         self.alphas = np.repeat(self["metronome_alpha"], self["repeats"])
