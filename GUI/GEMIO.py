@@ -6,6 +6,8 @@ import serial
 # would like to import GEMConstants.h instead. Look into h2py - LF 20170703
 GEM_START = '\x01'
 GEM_STOP = '\x00'
+GEM_METRONOME_ALPHA = '\x0A' #10
+GEM_METRONOME_TEMPO = '\x0B' #11
 
 # ==============================================================================
 # class to wrap common data file IO operations (writing headers etc.)
@@ -95,6 +97,12 @@ class GEMIOManager:
                 self.file.close()
 
             def send(self, msg):
+                # if isinstance(msg, int):
+                #     # convert int to binary
+                #     msg = '{0:08b}'.format(msg)
+                #     print("sending %d to arduino" % int(msg,2))
+                #     self.com.write(msg)
+                # else:
                 print("sending %d to arduino" % ord(msg[0]))
                 self.com.write(msg)
 
@@ -127,6 +135,8 @@ class GEMAcquisition(Thread):
         self.serial_ifo = presets["serial"]
         self.filepath = filepath
         self.run_duration = presets["run_duration"]
+        self.tempo = int(presets["metronome_tempo"])
+        self.ioi = presets["ioi"]
 
     # override Thread.run()
     def run(self):
@@ -134,6 +144,16 @@ class GEMAcquisition(Thread):
 
             # allow some time for handshake!
             io.com.readline()
+
+            # send relevant parameters to arduino
+            # print("sending tempo to arduino...")
+            # io.send(GEM_METRONOME_TEMPO)
+            # sleep(5)
+            # io.send(self.tempo)
+            #
+            # # TODO: wait for master to tell us it's ready
+            #
+            # sleep(5)
 
             # tell the master to start the experiment
             io.send(GEM_START)
