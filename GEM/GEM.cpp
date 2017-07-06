@@ -28,9 +28,12 @@ Metronome::Metronome()
 
     // alpha is the proportion of adaptivity from metronome
     // (0 = no adaptation; 1 = overly adaptive (unhelpful))
-    // See Fairhurst et al.
+    // See Fairhurst, Janata, & Keller, 2012
+    // default alpha value
     alpha = 0.3;
 
+    // NOTE: LF - is bpm stuff necessary? - can do on python side. metronome
+    //doesn't need to know about it.
     // high threshold for metronome BPM
     // Note: this cannot be higher than 300 BPM or it crashes
     BPMmax = 150;
@@ -47,6 +50,11 @@ Metronome::Metronome()
     //that should be used (not a cast) if precision is important
     //-SA 20170702
     ioi = (unsigned long)(60000 / bpm);
+
+    // Doesn't this only need to be a uint16_t (ioi will never be more than
+    // 2 bytes)? - LF 20170705
+    // default IOI in ms (500ms = 100BPM)
+    //unsigned long ioi = 700;
 
     played = false;
 
