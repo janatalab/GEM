@@ -285,10 +285,31 @@ void loop()
     // Check whether there is any message from the ECC
     if (Serial.available())
     {
+
+#ifdef DEBUG
+        // parseInt() if sending from serial monitor - LF 20710705
+        uint8_t msg = (uint8_t)Serial.parseInt();
+        switch (msg)
+#endif DEBUG
+
         // changed parseInt to read() because parseInt requires long - LF 20170704
         uint8_t msg = (uint8_t)Serial.read();
         switch (msg)
         {
+        //    case GEM_METRONOME_TEMPO:
+        //        // read next byte (after identifier)
+        //        if (Serial.available())
+        //        {
+        //        uint8_t bpm = (uint8_t)Serial.read();
+        //        met.ioi = (60000/bpm);
+        //        }
+
+            // case GEM_METRONOME_ALPHA:
+            //     // read next bytes (after identifier)
+            //     // TODO: CHECK: will this work?
+            //     // do we have access to met.alpha?
+            //     met.alpha = (float)Serial.parseFloat();
+
             case GEM_STOP:
                 TRIAL_RUNNING = false;
                 break;
