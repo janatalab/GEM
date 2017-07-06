@@ -5,16 +5,6 @@
 ///////////////////////////////////////////////////////////////////
 #ifndef GEM_h
 #define GEM_h
-
-//#include "GEMutils.h"
-
-// define various constants
-//
-// These were moved on 27Jun2017 by PJ to GEMConstants.h
-// #define MET_HEURISTIC_AVERAGE 1
-// #define GEM_START 1
-// #define GEM_STOP 0
-
 ///////////////////////////////////////////////////////////////////
 
 class GEM {
@@ -77,7 +67,7 @@ private:
     // -SA 20170706
 
     // inter-onset-interval (ms) corresponding to bpm
-    //NOTE: chnaged to uint16_t (should always be [0, (2^16)-1])
+    //NOTE: changed to uint16_t (should always be [0, (2^16)-1])
     uint16_t ioi;
 
     // current bpm
