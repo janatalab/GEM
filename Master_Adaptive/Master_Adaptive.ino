@@ -45,8 +45,12 @@
 #include "Lock.h"
 
 // DEFINES for compiler
-// #define DEBUG
+//#define DEBUG
 #undef DEBUG
+
+// NOTE: if you are sending messages from the Arduino serial monitor for debugging purposes, 
+// send the family code then value separated by a space. If you send them in succession Arduino 
+// does not respond properly. - LF 20170706
 
 //#define MAX_SLAVES 4
 //#define HANDSHAKE_TIMEOUT 5
@@ -295,6 +299,8 @@ void idle()
         // -SA 20170706
 #ifdef DEBUG
         uint8_t msg = (uint8_t)Serial.parseInt();
+        Serial.print("Received: ");
+        Serial.println(msg);
 #else
         uint8_t msg = (uint8_t)Serial.read();
 #endif
@@ -307,6 +313,10 @@ void idle()
 
             case GEM_METRONOME_ALPHA:
                 met.alpha = Serial.parseFloat();
+#ifdef DEBUG
+                Serial.print("Alpha set to: ");
+                Serial.println(met.alpha);
+#endif
                 break;
 
             case GEM_METRONOME_TEMPO:
@@ -314,6 +324,11 @@ void idle()
                 //setter function to make sure everything that need to be
                 //updated gets updated -SA 20170706
                 met.setTempo(Serial.parseInt());
+#ifdef DEBUG
+                Serial.print("IOI set to: ");
+                Serial.println(met.getIOI());
+#endif
+                
                 break;
 
             //NOTE: potential error reporting system:
