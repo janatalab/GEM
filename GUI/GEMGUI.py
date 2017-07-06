@@ -5,7 +5,16 @@
 # Most parameters loaded from GEM_presets file so user has very little to enter
 # Run gem_example.py to view current GUI
 
-# TODO:
+# LF TODO: 
+# Decode incoming bytes on the fly
+# -- this is where we will compare ECC window count to master window count
+# Check user imput for completeness
+# Reformat output file to be human-readable
+# Update countdown clock to start at appropriate time
+# Implement Error handling
+# Implement audio feedback conditions
+# --- send message to experimenter about what to do
+# Set slave sound from ECC - this might have to wait until v2
 
 import Tkinter
 from Tkinter import Tk, Label, Button, Entry, StringVar, Frame, OptionMenu, Text
@@ -17,7 +26,6 @@ import os
 
 import serial
 from time import time
-# from time import sleep
 
 from GEMIO import GEMDataFile, GEMAcquisition
 
@@ -89,14 +97,10 @@ class TextBoxGroup(Frame):
         self.label = Label(self, text=self.text)
         self.label.grid(row=0, column=0, pady=3)
 
-        #TODO: set button disabled color to not gray
-        #self.style = Style(fieldbackground=[("active", "black"), ("disabled", "red")])
-
         self.resp = StringVar(value=defaultEntry)
 
         self.entry = Entry(self, width=width, textvariable=self.resp)
         self.entry.grid(row=0, column=1, pady=3)
-
 
     def get_text(self):
         return self.resp.get()
@@ -126,6 +130,7 @@ class TextButtonGroup(Frame):
         self.button.grid(row=0, column=1)
 
 # ==============================================================================
+# class to create two buttons side-by-side
 class ButtonGroup(Frame):
     def __init__(self, parent, btnspec, spacex):
         Frame.__init__(self, parent)
@@ -266,13 +271,20 @@ class ExperimentControl(GEMGUIComponent):
 
             self.data_file.write_file_header(d, self.nruns)
 
+        # Get current run number
+        self.currRun = self.nruns - self.counter
+
         # write run header
         self.data_file.write_header(
             {
-                "run_number": self.nruns - self.counter,
+                "run_number": self.currRun,
                 "start_time": get_time()
             }
         )
+
+        # Get alpha value for this run & save to presets
+        # so we can use it in thread
+        self.parent.presets["currAlpha"] = self.parent.alphas[self.currRun]
 
         # class for communicating with the IO thread for this run
         self.itc = ITC(self.parent.data_viewer)
@@ -337,9 +349,7 @@ class ExperimentControl(GEMGUIComponent):
         else:
             self.end_run()
 
-        #TODO send code to arduino to stop. re-enable start button.
-        # or just return flag to start_run function to that it ends this run,
-        # increments run counter, etc.
+        #TODO start this only once GEM_START has been sent
 
 # ==============================================================================
 # Class to collect basic info required for GEM experiments
