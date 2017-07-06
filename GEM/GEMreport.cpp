@@ -9,7 +9,7 @@
 #include "GEMConstants.h"
 
 GEMReport::GEMReport() {
-	//Serial.begin(9600);
+    //Serial.begin(GEM_SERIAL_BAUDRATE)
 }
 
 void GEMReport::error(int error_code){
