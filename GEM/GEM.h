@@ -48,14 +48,6 @@ public:
     // initial ticking bpm
     int BPMinit;
 
-    // current bpm
-    int bpm;
-
-    // inter-onset-interval (ms) corresponding to bpm
-    // LF thinks this should by uint16_t
-    // should this be volatile if need to change it ? 
-    unsigned long ioi;
-
     // Has the sound been played in this window
     bool played;
 
@@ -69,8 +61,27 @@ public:
     //included in GEM.cpp so we don't actually need to pass them at all)
     //-SA 20170702
     // Functions
-    int scheduleNext(volatile int asynchArray[], volatile bool isActive[], uint8_t numSlaves,
-        uint8_t heuristic);
+    int scheduleNext(volatile int asynchArray[], volatile bool isActive[],
+        uint8_t numSlaves, uint8_t heuristic);
+
+    //NOTE: setter/getter methods for ioi and bpm
+    void setTempo(int);
+    uint16_t getIOI() const { return ioi; };
+
+private:
+    void setIOI();
+
+private:
+    //NOTE: ioi and bpm are interdependent, so they need to be kept insync, thus
+    //we make them private and provide get and set methods as needed
+    // -SA 20170706
+
+    // inter-onset-interval (ms) corresponding to bpm
+    //NOTE: chnaged to uint16_t (should always be [0, (2^16)-1])
+    uint16_t ioi;
+
+    // current bpm
+    int bpm;
 };
 
 ///////////////////////////////////////////////////////////////////
