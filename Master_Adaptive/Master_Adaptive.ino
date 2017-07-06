@@ -59,6 +59,11 @@ Global variables
 // this ultimately has to be a variable that is turned off and on by the ECC
 bool TRIAL_RUNNING = false;
 
+//NOTE: the current state that we are in (either IDLE or RUN), we begin in the
+//IDEL state to allow ECC to set important parameters (e.g. met.alpha etc.)
+//-SA 20170706
+uint8_t GEM_CURRENT_STATE = GEM_STATE_IDLE;
+
 // Get ourselves a GEMSound object
 char soundName[ ] = "1.WAV";
 GEMSound sound;
@@ -77,7 +82,7 @@ Timing variables
 //unsigned long scheduledMetronomeTime = 0;
 unsigned long currentTime;
 
-// Time that the next window ends (met.next + met.ioi/2)
+// Time that the next window ends (met.next + met.getIOI()/2)
 unsigned long windowEnds = 0;
 uint16_t window = 0x0000;
 
@@ -276,42 +281,78 @@ void setup()
 /////////////// END OF ARDUINO Setup() FUNCTION //////////////////
 //////////////////////////////////////////////////////////////////
 
-/////////////////////////////////////////////////////////
-//////////////// ARDUINO Loop() FUNCTION ////////////////
-/////////////////////////////////////////////////////////
-
-void loop()
+/* -----------------------------------------------------------------------------
+idle function: called repeatedly from loop() until ECC instructs us to
+transition to the RUN state
+----------------------------------------------------------------------------- */
+void idle()
 {
+    if (Serial.available())
+    {
+        //NOTE: in the IDLE state sending data as strings is fine, we just need
+        //to keep track of when that is ok on the ECC side (should be simple)
+        //we should still use single byte message id codes (i.e. <msg> below)
+        // -SA 20170706
+#ifdef DEBUG
+        uint8_t msg = (uint8_t)Serial.parseInt();
+#else
+        uint8_t msg = (uint8_t)Serial.read();
+#endif
+
+        switch (msg)
+        {
+            case GEM_STATE_RUN:
+                GEM_CURRENT_STATE = GEM_STATE_RUN;
+                break;
+
+            case GEM_METRONOME_ALPHA:
+                met.alpha = Serial.parseFloat();
+                break;
+
+            case GEM_METRONOME_TEMPO:
+                //NOTE: met.getIOI() depends on met.bpm (tempo) so we use a
+                //setter function to make sure everything that need to be
+                //updated gets updated -SA 20170706
+                met.setTempo(Serial.parseInt());
+                break;
+
+            //NOTE: potential error reporting system:
+            //ECC is requestig error status, send value of global
+            //GEM_CURRENT_ERROR -SA 20170706
+            //case GEM_ERROR:
+            //    Serial.write(GEM_CURRENT_ERROR); //0x00 if no error?
+            //    break;
+
+        }
+
+    }
+    else
+    {
+        delay(10);
+    }
+}
+/* -----------------------------------------------------------------------------
+run function: called repeatedly from loop() when in the RUN state (does exactly)
+what loop() used to do, moved for organizational clarity
+----------------------------------------------------------------------------- */
+void run()
+{
+    // Get the current time
+    currentTime = millis();
+
     // Check whether there is any message from the ECC
     if (Serial.available())
     {
-
 #ifdef DEBUG
-        // parseInt() if sending from serial monitor - LF 20710705
         uint8_t msg = (uint8_t)Serial.parseInt();
-        switch (msg)
-#endif DEBUG
-
-        // changed parseInt to read() because parseInt requires long - LF 20170704
+#else
         uint8_t msg = (uint8_t)Serial.read();
+#endif
         switch (msg)
         {
-        //    case GEM_METRONOME_TEMPO:
-        //        // read next byte (after identifier)
-        //        if (Serial.available())
-        //        {
-        //        uint8_t bpm = (uint8_t)Serial.read();
-        //        met.ioi = (60000/bpm);
-        //        }
-
-            // case GEM_METRONOME_ALPHA:
-            //     // read next bytes (after identifier)
-            //     // TODO: CHECK: will this work?
-            //     // do we have access to met.alpha?
-            //     met.alpha = (float)Serial.parseFloat();
-
             case GEM_STOP:
                 TRIAL_RUNNING = false;
+                GEM_CURRENT_STATE = GEM_STATE_IDLE;
                 break;
 
             case GEM_START:
@@ -335,8 +376,6 @@ void loop()
 
     if (TRIAL_RUNNING)
     {
-        // Get the current time
-        currentTime = millis();
 
         // Did we cross over to a new window?
         // If so, we need to schedule a new metronome event
@@ -347,9 +386,9 @@ void loop()
             unsigned long last_met = met.next;
 
             // Catch us up if we have fallen behind
-            if ((met.next + met.ioi + met.ioi/2) < currentTime)
+            if ((met.next + met.getIOI() + met.getIOI()/2) < currentTime)
             {
-                met.next = currentTime - (met.ioi/2);
+                met.next = currentTime - (met.getIOI()/2);
             }
 
             //NOTE: passing the global volitile array <currAsynch> probably
@@ -368,7 +407,7 @@ void loop()
             );
 
             // when does this window end
-            windowEnds = met.next + (met.ioi/2);
+            windowEnds = met.next + (met.getIOI()/2);
 
 
             // Send data to the ECC
@@ -456,8 +495,28 @@ void loop()
 
             met.played = true; // flag that it has been played
         }
+    } //if (TRIAL_RUNNING)
 
-    } // if (TRIAL_RUNNING)
+}
+
+/////////////////////////////////////////////////////////
+//////////////// ARDUINO Loop() FUNCTION ////////////////
+/////////////////////////////////////////////////////////
+
+void loop()
+{
+    //NOTE: each state function (run() and idle()) are responsible for correctly
+    //indicating transitions (as signaled by the ECC) by setting the global
+    //GEM_CURRENT_STATE -SA 20170706
+    switch (GEM_CURRENT_STATE)
+    {
+        case GEM_STATE_RUN:
+            run();
+            break;
+        case GEM_STATE_IDLE:
+            idle();
+            break;
+    }
 
 }
 
