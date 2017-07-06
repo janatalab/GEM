@@ -28,7 +28,11 @@ The final section of constants contain constants with non-arbitrary values
 (i.e. durations, counts, etc). These are written as integers to reflect that
 fact, as they obviously can't follow the family system.
 
-The primary motivation for this chage is 1) Petr's request (and it makes sense), and 2) if the ECC is going to be setting parameters via Serial IO (e.g. tell the master what alpha value to use for the following run) then we need some kind of a state system so the masters knows when we are in vs. between runs (i.e. when to allow parameters to be changed etc.) Feedback is welcome.
+The primary motivation for this chage is 1) Petr's request (and it makes sense),
+and 2) if the ECC is going to be setting parameters via Serial IO (e.g. tell
+the master what alpha value to use for the following run) then we need some
+kind of a state system so the master knows when we are in vs. between runs
+(i.e. when to allow parameters to be changed etc.) Feedback is welcome.
 -SA 20170706
 ----------------------------------------------------------------------------- */
 
@@ -74,7 +78,7 @@ Error handling related constants (0x2* = 32 - 47)
 /* -----------------------------------------------------------------------------
 Sound related constants (0x3* = 48 - 71)
 ----------------------------------------------------------------------------- */
-//NOTE: the might be considered control / "state" constants too, so it might
+//NOTE: these might be considered control / "state" constants too, so it might
 //make sense to move then to the contol family
 #define MUTE_SOUND   0x30 //48
 #define UNMUTE_SOUND 0x31 //49
