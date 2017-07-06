@@ -2,11 +2,37 @@ from threading import Thread
 from time import time, sleep
 import json
 import serial
+import re
 
 # would like to import GEMConstants.h instead. Look into h2py - LF 20170703
 GEM_START = '\x01'
 GEM_STOP = '\x00'
 GEM_STATE_RUN = '\x04' #4
+
+# ==============================================================================
+# parse a string containing a c/c++ uinsigned int literal
+def parse_uint(val):
+    #uint -> char, all other data type can stay as strings
+    if val[0:2] == "0x":
+        v = val[2:].decode("hex")
+    else:
+        v = val
+    return v
+
+# ==============================================================================
+# parse preprocessor defines from a .h file
+# in: <hfile> the path to the header file to parse
+# out: a dictionary mapping define names to values (strings)
+def parse_constants(hfile):
+    with open(hfile, "r") as io:
+        src = io.read()
+
+    d = dict()
+    pattern = re.compile("\#define\s+(?P<name>\w+)\s+(?P<val>\w+)")
+    for match in pattern.finditer(src):
+        d[match.group("name")] = parse_uint(match.group("val"))
+
+    return d
 
 # ==============================================================================
 # class to wrap common data file IO operations (writing headers etc.)
