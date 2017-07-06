@@ -32,8 +32,8 @@
 #define GEM_TAP_RESET 0x00
 
 // Sound-related constants
-#define MUTE_SOUND 0xc8 //200
-#define UNMUTE_SOUND 0xc9 //201
+#define MUTE_SOUND 0xC8 //200
+#define UNMUTE_SOUND 0xC9 //201
 
 // Performance-related constants
 #define GEM_HANDSHAKE_TIMEOUT 0x05
@@ -45,11 +45,11 @@
 // Metronome-related constants
 // NOTE: the heuristic should be 1-byte, (256 options seem sufficient) if that
 // changes make sure to change Metronome::scheduleNext signature
+// NOTE: these will be used in same loop as GEM_START etc. so need to be unique
+// values - LF 20170703
 #define GEM_METRONOME_HEURISTIC_AVERAGE 0x01
-#define GEM_METRONOME_ALPHA 0x00
-#define GEM_METRONOME_TEMPO 0x01
-//#define GEM_WINDOW 0x0A //10
-//#define GEM_METRONOME_NEXT 0x0B //11
+#define GEM_METRONOME_ALPHA 0x0A //10
+#define GEM_METRONOME_TEMPO 0x0B //11
 
 // DTP -> data transfer protocol
 // transfer only raw data: metronome time & asynchronies
