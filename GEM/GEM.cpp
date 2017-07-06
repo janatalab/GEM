@@ -73,7 +73,6 @@ int Metronome::scheduleNext(volatile int asynchArray[], volatile bool isActive[]
     int asynchSum = 0;
     int numResponse = 0;
     int asynchAdjust;
-    //bool DEBUG = 1;
 
     // Accumulate
     for (uint8_t s = 0; s < numSlaves; s++)
