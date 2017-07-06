@@ -44,20 +44,27 @@ Metronome::Metronome()
     // initial ticking bpm
     BPMinit = 120;
 
-    bpm = BPMinit;
+    //NOTE: <ioi> member variable depends on <bpm> (also member), so we make
+    //a setter function for bpm so ioi always get updated -SA 20170706
+    setTempo(BPMinit);
 
+    played = false;
+
+}
+
+void Metronome::setTempo(int new_bpm)
+{
+    bpm = new_bpm;
+    setIOI();
+}
+
+//this should only be called from setTempo, to change ioi use this -SA 20170706
+void Metronome::setIOI()
+{
     //NOTE: this performs integer division, so if floor was intended
     //that should be used (not a cast) if precision is important
     //-SA 20170702
     ioi = (unsigned long)(60000 / bpm);
-
-    // Doesn't this only need to be a uint16_t (ioi will never be more than
-    // 2 bytes)? - LF 20170705
-    // default IOI in ms (500ms = 100BPM)
-    //unsigned long ioi = 700;
-
-    played = false;
-
 }
 
 int Metronome::scheduleNext(volatile int asynchArray[], volatile bool isActive[],
