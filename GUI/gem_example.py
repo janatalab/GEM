@@ -14,8 +14,8 @@ presets = {
     #                     "1.WAV",
     #                     "1.WAV"
     #                 ],
-    "metronome_alpha": [0, 0.25, 0.5, 0.75, 1],
-    "metronome_tempo": 100.0, #units: beats-per-minute
+    "metronome_alpha": [0.0, 0.25, 0.5, 0.75, 1.0],
+    "metronome_tempo": 150.0, #units: beats-per-minute
     "repeats": 2.0,
     "windows": 50.0, #number of windows
 
