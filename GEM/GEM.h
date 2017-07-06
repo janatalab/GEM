@@ -22,30 +22,7 @@ class GEM {
   public:
     // constructor
     GEM();
-
-    // Variables
-
-    //////// FUNCTIONS
-  //   void getGemInfo(void);
-  //
-  // protected:
-
-    //////// CLASS VARIABLES
-    // int gemType;                    // Slave = 1, Master = 2
-    // int FSRpin;                     // analog pin for FSR input
-    // int sendPin;                    // sends an interrupt on this pin
-    // int I2C_Address;                // Unique address for slave boards, set to zero for master
-
-    //static void receiveI2CEvent(int byteCount); // must be static to be passed into Wire library function
-
-    // void printGemType(void);
-    // void printI2CAddress(void);
-    // void printPins(void);
-    // int getI2CAddress(void);
-
 };
-//NOTE: everythinc commented above is no longer necessary and should be deleted
-// - LF 20170703
 
 // Define a metronome class to contain various metronome parameters
 class Metronome {
@@ -59,8 +36,10 @@ public:
     // See Fairhurst et al.
     float alpha;
 
-    // high threshold for metronome BPM
-    // Note: this cannot be higher than 300 BPM or it crashes
+    // // NOTE: These are unnecessary. LF - 20170705 - we can do these BPM checks
+    // //on python side. Metronome only uses IOI anyway.
+    // // // high threshold for metronome BPM
+    // // // NOTE: this cannot be higher than 300 BPM or it crashes
     int BPMmax;
 
     // low threshold for metronome BPM
@@ -73,6 +52,8 @@ public:
     int bpm;
 
     // inter-onset-interval (ms) corresponding to bpm
+    // LF thinks this should by uint16_t
+    // should this be volatile if need to change it ? 
     unsigned long ioi;
 
     // Has the sound been played in this window
