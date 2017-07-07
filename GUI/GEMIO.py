@@ -4,11 +4,6 @@ import json
 import serial
 import re
 
-# would like to import GEMConstants.h instead. Look into h2py - LF 20170703
-GEM_START = '\x01'
-GEM_STOP = '\x00'
-GEM_STATE_RUN = '\x04' #4
-
 # ==============================================================================
 # parse a string containing a c/c++ uinsigned int literal
 def parse_uint(val):
@@ -122,12 +117,6 @@ class GEMIOManager:
                 self.file.close()
 
             def send(self, msg):
-                # if isinstance(msg, int):
-                #     # convert int to binary
-                #     msg = '{0:08b}'.format(msg)
-                #     print("sending %d to arduino" % int(msg,2))
-                #     self.com.write(msg)
-                # else:
                 print("sending %d to arduino" % ord(msg[0]))
                 self.com.write(msg)
 
@@ -156,14 +145,17 @@ class GEMAcquisition(Thread):
 
         Thread.__init__(self)
 
+        self.hfile = presets["hfile"]
+        self.constants = parse_constants(self.hfile)
+        print(self.constants)
         self.itc = itc
         self.serial_ifo = presets["serial"]
         self.filepath = filepath
         self.run_duration = presets["run_duration"]
         self.tempo = int(presets["metronome_tempo"])
         # TODO: get these string vals from constants file
-        self.tempo = '\x12' + str(self.tempo)
-        self.currAlpha = '\x17' + str(presets["currAlpha"])
+        self.tempo = self.constants["GEM_METRONOME_TEMPO"] + str(self.tempo)
+        self.currAlpha = self.constants["GEM_METRONOME_ALPHA"] + str(presets["currAlpha"])
 
     # override Thread.run()
     def run(self):
@@ -187,8 +179,8 @@ class GEMAcquisition(Thread):
             #
 
             # tell the master to start the experiment
-            io.send(GEM_STATE_RUN)
-            io.send(GEM_START)
+            io.send(self.constants["GEM_STATE_RUN"])
+            io.send(self.constants["GEM_START"])
 
             tstart = time()
             done = self.itc.check_done()
@@ -205,4 +197,4 @@ class GEMAcquisition(Thread):
                 done = self.itc.check_done()
                 io.com.flushOutput()
 
-            io.send(GEM_STOP)
+            io.send(self.constants["GEM_STOP"])
