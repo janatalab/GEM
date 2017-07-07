@@ -15,15 +15,21 @@ def parse_uint(val):
     return v
 
 # ==============================================================================
+# remove c/c++ style comments from a string
+def remove_comments(src):
+    pattern = re.compile(r"(?:/\*(?:[^*]|(?:\*+[^*/]))*\*+/)|(?://.*)")
+    return pattern.sub("", src)
+
+# ==============================================================================
 # parse preprocessor defines from a .h file
 # in: <hfile> the path to the header file to parse
 # out: a dictionary mapping define names to values (strings)
 def parse_constants(hfile):
     with open(hfile, "r") as io:
-        src = io.read()
+        src = remove_comments(io.read())
 
     d = dict()
-    pattern = re.compile("\#define\s+(?P<name>\w+)\s+(?P<val>\w+)")
+    pattern = re.compile(r"\#define\s+(?P<name>\w+)\s+(?P<val>\w+)")
     for match in pattern.finditer(src):
         d[match.group("name")] = parse_uint(match.group("val"))
 
@@ -119,7 +125,7 @@ class GEMIOManager:
             #def buffer(self, msg):
                 # buffer incoming bytes until we have the number expected given
                 # the dtp (then send)
-                # TODO 
+                # TODO
 
             #def parse_message(self, protocol, msg):
                 # parse the msg, given its dtp (expected byte length)
