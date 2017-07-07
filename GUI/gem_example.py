@@ -6,6 +6,7 @@ presets = {
     "serial": {"port": "/dev/cu.usbmodem1421", "baud_rate": 115200, "timeout": 5},
     "filename": "GEM_data_",
     "data_dir": "/Users/laurenfink/Documents/Arduino/",
+    "hfile": "/Users/laurenfink/Documents/Arduino/GEM/GEM/GEMConstants.h",
     # "sound_dir": "<sound_dir>",
     "slaves_requested": 3, #NB: only 3 slaves working in Davis rig
     #"master_sound": "1.WAV",
