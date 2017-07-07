@@ -5,7 +5,7 @@
 # Most parameters loaded from GEM_presets file so user has very little to enter
 # Run gem_example.py to view current GUI
 
-# LF TODO: 
+# LF TODO:
 # Decode incoming bytes on the fly
 # -- this is where we will compare ECC window count to master window count
 # Check user imput for completeness
@@ -302,7 +302,10 @@ class ExperimentControl(GEMGUIComponent):
         self.parent.register_cleanup("abort_run", self.close_request)
 
         # begin countdown clock (in python)
-        self.time_remaining = self.parent["run_duration"]
+        self.time_remaining = self.parent["run_duration"] + 7
+        # ^ this addition of 7 is a hack TODO: FIX
+        # we need to change communication to involve GEMIO and threads
+        # besides just data viewer. will require some redesign.
         self.update_countdown()
 
     # --------------------------------------------------------------------------
