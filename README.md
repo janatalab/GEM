@@ -26,4 +26,4 @@ This project depends on in number of other libraries:
 </ul>
 
 # Contributions
-Initial versions of the code were developed by Wisam Reid (at CCRMA at Stanford) and David Miranda (Case Western Reserve University), with input from Lauren Fink (UC Davis) and Petr Janata (UC Davis).  Wisam, David, and Lauren constructed and started debugging the initial setup in August 2016.  The code was refactored by Petr Janata in March 2017, and constitutes the starting point for this repository.
+Initial versions of the code were developed by Wisam Reid (at CCRMA at Stanford) and David Miranda (Case Western Reserve University), with input from Lauren Fink (UC Davis) and Petr Janata (UC Davis).  Wisam, David, and Lauren constructed and started debugging the initial setup in August 2016.  The code was refactored by Petr Janata in March 2017, and constitutes the starting point for this repository. The end of June and beginning of July 2017 saw a huge push by Lauren Fink and Scottie Alexander to clean-up, make the code much more robust, and implement the first version of the GUI.
