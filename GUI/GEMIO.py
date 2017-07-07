@@ -116,6 +116,15 @@ class GEMIOManager:
                 self.com.close()
                 self.file.close()
 
+            #def buffer(self, msg):
+                # buffer incoming bytes until we have the number expected given
+                # the dtp (then send)
+                # TODO 
+
+            #def parse_message(self, protocol, msg):
+                # parse the msg, given its dtp (expected byte length)
+                # TODO
+
             def send(self, msg):
                 print("sending %d to arduino" % ord(msg[0]))
                 self.com.write(msg)
@@ -153,7 +162,6 @@ class GEMAcquisition(Thread):
         self.filepath = filepath
         self.run_duration = presets["run_duration"]
         self.tempo = int(presets["metronome_tempo"])
-        # TODO: get these string vals from constants file
         self.tempo = self.constants["GEM_METRONOME_TEMPO"] + str(self.tempo)
         self.currAlpha = self.constants["GEM_METRONOME_ALPHA"] + str(presets["currAlpha"])
 
