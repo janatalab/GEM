@@ -17,6 +17,8 @@
 #include "Lock.h"
 ///////////////////////////////////////////////////////////////////
 
+#define DEBUG
+
 // GEM constructor
 GEM::GEM() {}
 
@@ -64,7 +66,7 @@ void Metronome::setIOI()
     //NOTE: this performs integer division, so if floor was intended
     //that should be used (not a cast) if precision is important
     //-SA 20170702
-    ioi = (unsigned long)(60000 / bpm);
+    ioi = floor(60000 / bpm);
 }
 
 int Metronome::scheduleNext(volatile int asynchArray[], volatile bool isActive[],
@@ -104,11 +106,18 @@ int Metronome::scheduleNext(volatile int asynchArray[], volatile bool isActive[]
         // then multiplication, then truncation. If floor() was
         //intended that should be used if precision is important
         //-SA 20170702
-        asynchAdjust = (int)(asynchSum / numResponse * alpha);
+        if (numResponse > 0) {
+            asynchAdjust = floor(asynchSum / numResponse * alpha);
+        } 
+        else {
+            asynchAdjust = 0;
+        }
+
 #ifdef DEBUG
         Serial.print("adj: ");
         Serial.println(asynchAdjust);
 #endif
+
     }
 
     //NOTE: use of extra {} for ScopedVolatileLock release the

@@ -86,15 +86,23 @@ void GEMSound::playSoundFile(FatReader _file){
 	// and then subsequently just play (and rewind if necessary)
 	//if (!wave.create(_file)) r.error(ERR_WAVEHC_WAVE_CREATE);
 
+  // stop playback in case we're playing back
+  if (wave.isplaying) {
+    wave.stop();
+  }
+
+  // Make sure we're at the beginning
+  wave.seek(0);
+
 	// start playback
 	wave.play();
 
-	while(wave.isplaying){
-	// Serial.println("SUP FOO");
-	}
-	wave.stop();
+	// while(wave.isplaying){
+	// // Serial.println("SUP FOO");
+	// }
+	// wave.stop();
 
-  // Rewind
-  wave.seek(0);
+ //  // Rewind
+ //  wave.seek(0);
   
 }

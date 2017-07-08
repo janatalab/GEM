@@ -2,11 +2,15 @@ from GEMGUI import GEMGUI
 import serial
 from time import time
 
+import os
+
+rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
+
 presets = {
-    "serial": {"port": "/dev/cu.usbmodem1421", "baud_rate": 115200, "timeout": 5},
+    "serial": {"port": "/dev/cu.usbmodem1451111", "baud_rate": 115200, "timeout": 5},
     "filename": "GEM_data_",
-    "data_dir": "/Users/laurenfink/Documents/Arduino/",
-    "hfile": "/Users/laurenfink/Documents/Arduino/GEM/GEM/GEMConstants.h",
+    "data_dir": rootpath,
+    "hfile": rootpath + "GEM/GEM/GEMConstants.h",
     # "sound_dir": "<sound_dir>",
     "slaves_requested": 3, #NB: only 3 slaves working in Davis rig
     #"master_sound": "1.WAV",
