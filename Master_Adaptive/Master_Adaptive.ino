@@ -29,14 +29,18 @@
 // I2C Communication library
 #include <Wire.h>
 
+// DEFINES for compiler
+//#define DEBUG
+#undef DEBUG
+
+// GEM constants
+#include <GEMConstants.h>
+
 // GEM stuff, including Metronome class
 #include <GEM.h>
 
 //GEMsound object for master
 #include <GEMsound.h>
-
-// GEM constants
-#include <GEMConstants.h>
 
 // GEM reporting object
 #include <GEMreport.h>
@@ -44,9 +48,6 @@
 // for ScopedVolatileLock
 #include "Lock.h"
 
-// DEFINES for compiler
-//#define DEBUG
-#undef DEBUG
 
 // NOTE: if you are sending messages from the Arduino serial monitor for debugging purposes, 
 // send the family code then value separated by a space. If you send them in succession Arduino 
@@ -352,8 +353,6 @@ what loop() used to do, moved for organizational clarity
 ----------------------------------------------------------------------------- */
 void run()
 {
-    // Get the current time
-    currentTime = millis();
 
     // Check whether there is any message from the ECC
     if (Serial.available())
@@ -391,6 +390,9 @@ void run()
 
     if (TRIAL_RUNNING)
     {
+        // Get the current time
+        currentTime = millis();
+
 
         // Did we cross over to a new window?
         // If so, we need to schedule a new metronome event
@@ -473,13 +475,13 @@ void run()
             disable interrupts while we read a value from <currAsynch>
             -SA 20170702
             */
-            {
+            {             
                 ScopedVolatileLock lock;
                 Serial.write((byte *)currAsynch, sizeof (int) * GEM_MAX_SLAVES);
 
                 // Send calculated metronome adjustment to ECC
                 Serial.write((byte *)&asynchAdjust, sizeof (int));
-
+                
                 // reset the current tap times
                 for (uint8_t s = 0; s < GEM_MAX_SLAVES; s++)
                 {

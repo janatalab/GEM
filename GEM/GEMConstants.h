@@ -8,6 +8,10 @@
 
 #ifndef GEMCONSTANTS_H_
 #define GEMCONSTANTS_H_
+
+// #define DEBUG
+//#undef DEBUG
+
 /* -----------------------------------------------------------------------------
 NOTE: I've changed the constants system to use a more structured organization
 following Petr's request and Lauren's initial reorganization. This may be a
