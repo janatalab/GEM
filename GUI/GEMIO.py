@@ -160,8 +160,7 @@ class GEMAcquisition(Thread):
 
         Thread.__init__(self)
 
-        self.hfile = presets["hfile"]
-        self.constants = parse_constants(self.hfile)
+        self.constants = parse_constants(presets["hfile"])
         print(self.constants)
         self.itc = itc
         self.serial_ifo = presets["serial"]
@@ -179,13 +178,11 @@ class GEMAcquisition(Thread):
             io.com.readline()
 
             # send relevant parameters to arduino
-            print("sending tempo to arduino...")
-            print(self.tempo)
+            self.itc.send_message("Sending tempo to arduino: " + self.tempo)
             io.send(self.tempo)
             sleep(1)
 
-            print("sending this run's alpha value to arduino...")
-            print(self.currAlpha)
+            self.itc.send_message("Sending alpha to arduino: " + self.currAlpha)
             io.send(self.currAlpha)
             sleep(1)
             #
@@ -194,6 +191,11 @@ class GEMAcquisition(Thread):
 
             # tell the master to start the experiment
             io.send(self.constants["GEM_STATE_RUN"])
+
+            # notify anyone registered to receive GEM_START signals
+            # no message is needed (defaults to "")
+            self.itc.send_message("run_start")
+
             io.send(self.constants["GEM_START"])
 
             tstart = time()
@@ -205,8 +207,8 @@ class GEMAcquisition(Thread):
                     io.commit(n)
 
                     # notify data viewer that we've received some data
-                    self.itc.send_message(n)
-                    print("Sending to itc: %d" % n)
+                    self.itc.send_message("data_viewer", n)
+                    # print("Sending to itc: %d" % n)
 
                 done = self.itc.check_done()
                 io.com.flushOutput()
