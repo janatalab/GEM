@@ -92,6 +92,32 @@ class GEMDataFile:
 
         self.current_run += 1
 
+class SerialSpoof:
+    def __init__(self):
+        self.in_waiting = 1
+        self.x = 0
+
+    def write(self, msg):
+        foo = "Serial write: "
+        for c in msg:
+            foo += str(ord(c)) + ","
+        print(foo)
+
+    def read(self, n):
+        self.in_waiting += 1
+        return '\x00'
+
+    def readline(self):
+        sleep(.050)
+
+    def flushOutput(self):
+        pass
+
+    def close(self):
+        pass
+
+    def isOpen(self):
+        return True
 # ==============================================================================
 # GEMIO resource manager: allow for automatic resource clean up when used in
 # a with statement
@@ -113,6 +139,8 @@ class GEMIOManager:
                     timeout=ifo["timeout"]
                 )
 
+                # self.com = SerialSpoof()
+
                 if self.com.isOpen():
                     print("serial is open!")
 
@@ -122,17 +150,8 @@ class GEMIOManager:
                 self.com.close()
                 self.file.close()
 
-            #def buffer(self, msg):
-                # buffer incoming bytes until we have the number expected given
-                # the dtp (then send)
-                # TODO
-
-            #def parse_message(self, protocol, msg):
-                # parse the msg, given its dtp (expected byte length)
-                # TODO
-
             def send(self, msg):
-                print("sending %d to arduino" % ord(msg[0]))
+                # print("sending %d to arduino" % ord(msg[0]))
                 self.com.write(msg)
 
             def flush(self):
@@ -142,6 +161,7 @@ class GEMIOManager:
                 self.file.write(self.com.read(n))
 
             def available(self):
+                sleep(.5)
                 return self.com.in_waiting
 
         # ======================================================================
@@ -161,7 +181,7 @@ class GEMAcquisition(Thread):
         Thread.__init__(self)
 
         self.constants = parse_constants(presets["hfile"])
-        print(self.constants)
+        # print(self.constants)
         self.itc = itc
         self.serial_ifo = presets["serial"]
         self.filepath = filepath
@@ -178,13 +198,13 @@ class GEMAcquisition(Thread):
             io.com.readline()
 
             # send relevant parameters to arduino
-            self.itc.send_message("Sending tempo to arduino: " + self.tempo)
+            self.itc.send_message("data_viewer", "Sending tempo to arduino: " + self.tempo)
             io.send(self.tempo)
-            sleep(1)
+            sleep(0.100)
 
-            self.itc.send_message("Sending alpha to arduino: " + self.currAlpha)
+            self.itc.send_message("data_viewer", "Sending alpha to arduino: " + self.currAlpha)
             io.send(self.currAlpha)
-            sleep(1)
+            sleep(0.100)
             #
             # # TODO: wait for master to tell us it's ready?
             #
@@ -211,6 +231,9 @@ class GEMAcquisition(Thread):
                     # print("Sending to itc: %d" % n)
 
                 done = self.itc.check_done()
+
                 io.com.flushOutput()
 
             io.send(self.constants["GEM_STOP"])
+
+            print("IO thread terminated")
