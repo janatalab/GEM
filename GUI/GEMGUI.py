@@ -256,8 +256,6 @@ class ExperimentControl(GEMGUIComponent):
         # if this is the first run, init the data file and write the file header
         if self.counter == self.nruns:
             data_file = self.parent.init_data_file()
-
-
         else:
             data_file = self.parent.data_file
 
@@ -276,6 +274,9 @@ class ExperimentControl(GEMGUIComponent):
         # so we can use it in thread
         self.parent.presets["currAlpha"] = self.parent.alphas[krun]
 
+        # make sure the itc is in the not-done state
+        self.parent.itc.set_done(False)
+
         # NOTE: the IO thread should probably be controled by the main GEMGUI
         # so we don't have to keep creating and destroying it (and passing in
         # the same agrs) each time -SA 20170707
@@ -285,11 +286,11 @@ class ExperimentControl(GEMGUIComponent):
             self.parent.presets
         )
 
+        self.parent.unregister_cleanup("itc_thread")
         self.parent.register_cleanup("abort_run", self.close_request)
 
         # begin countdown clock (in python)
-        self.time_remaining = self.parent["run_duration"] #+ 7
-        # ^ this addition of 7 is a hack TODO: FIX
+        self.time_remaining = self.parent["run_duration"]
 
         # starting thread is the last thing we should do
         self.acq.start()
@@ -302,15 +303,19 @@ class ExperimentControl(GEMGUIComponent):
 
     # --------------------------------------------------------------------------
     def abort_run(self):
-        self.itc.done()
+        print("Calling itc.set_done()")
+        self.parent.itc.set_done(True)
         self.clean_up()
 
     # --------------------------------------------------------------------------
     def clean_up(self):
+        print("Asking IO thread to terminate")
         self.acq.join()
         self.timer.cancel()
+        self.time_remaining = 0
         self["timeleft"].set_text("00:00")
         self.parent.unregister_cleanup("abort_run")
+        self.parent.register_cleanup("itc_thread", self.parent.itc.close)
         self["ss"].enable("Start")
 
     # --------------------------------------------------------------------------
@@ -339,8 +344,6 @@ class ExperimentControl(GEMGUIComponent):
             self.timer.start()
         else:
             self.end_run()
-
-        #TODO start this only once GEM_START has been sent
 
 # ==============================================================================
 # Class to collect basic info required for GEM experiments
@@ -409,6 +412,9 @@ class GEMGUI(Frame):
         self.itc.register_listener("run_start",
             self.exp_control.update_countdown)
 
+        print("starting ITC thread")
+        self.itc.start()
+
         # make sure we close the ITC thread has a chance to clean up when the
         # app closes
         self.register_cleanup("itc_thread", self.itc.close)
@@ -461,7 +467,8 @@ class GEMGUI(Frame):
         #TODO add conditional about this path already existing (in GEMIO?)
         self.data_file = GEMDataFile(filepath)
 
-        self.data_file.write_file_header(d, self.nruns)
+        nruns = len(self.alphas)
+        self.data_file.write_file_header(d, nruns)
 
         return self.data_file
 
