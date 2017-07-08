@@ -18,17 +18,14 @@
 
 import Tkinter
 from Tkinter import Tk, Label, Button, Entry, StringVar, Frame, OptionMenu, Text
-import numpy as np
+from threading import Timer
 from datetime import date, datetime
-from threading import Timer, Lock, Condition
 from copy import copy
+import numpy as np
 import os
 
-import serial
-from time import time
-
 from GEMIO import GEMDataFile, GEMAcquisition
-
+from GEMITC import ITC
 
 def get_date():
     return date.today().strftime("%Y%m%d")
@@ -177,7 +174,7 @@ class DataViewer(GEMGUIComponent):
     def callback(self, event):
         x = str(event.x)
         y = str(event.y)
-        self.writeToViewer("Click at [" + x + ", " + y + "]")
+        self.show("Click at [" + x + ", " + y + "]")
 
     # --------------------------------------------------------------------------
     def draw(self):
@@ -190,7 +187,10 @@ class DataViewer(GEMGUIComponent):
         self["dv"]["state"] = "disabled"
 
     # --------------------------------------------------------------------------
-    def writeToViewer(self, msg):
+    def show(self, msg):
+        if isinstance(msg, int):
+            msg = "[REC]: %d bytes from arduino" % msg
+
         if self.buffer and self.nline >= 20:
             self.buffer = self.buffer[self.buffer.find('\n')+1:]
 
@@ -218,14 +218,19 @@ class ExperimentControl(GEMGUIComponent):
         self.add_row("ss", ButtonGroup(self, spec, 39))
 
         # Time remaining in run countdown
-        self.add_row("timeleft", TextBoxGroup(self,"Time Remaining (this Run):", 5))
+        self.add_row("timeleft", TextBoxGroup(self,
+            "Time Remaining (this Run):", 5))
         self["timeleft"].set_text(self.format_time(self.parent["run_duration"]))
         self["timeleft"].disable()
 
         self.nruns = len(self.parent.alphas)
-        self.add_row("runsleft", TextBoxGroup(self, "Number of Runs Remaining:", 3))
+        self.add_row("runsleft", TextBoxGroup(self,
+            "Number of Runs Remaining:", 3))
+
         self["runsleft"].set_text(str(self.nruns))
         self.counter = self.nruns
+
+        self.time_remaining = 0
 
     # --------------------------------------------------------------------------
     def initArduino(self):
@@ -250,63 +255,45 @@ class ExperimentControl(GEMGUIComponent):
 
         # if this is the first run, init the data file and write the file header
         if self.counter == self.nruns:
+            data_file = self.parent.init_data_file()
 
-            data_dir = os.path.join(self.parent["data_dir"], get_date())
-            if not os.path.exists(data_dir):
-                os.mkdir(data_dir)
 
-            bi = self.parent.basic_info
-
-            d = copy(self.parent.presets)
-            d["subject_ids"] = bi.get_subjids()
-            d["experimenter_id"] = bi.get_experimenter()
-            d["date"] = get_date()
-            d["time"] = get_time()
-
-            # added subid1 to filename - LF
-            filepath = os.path.join(data_dir, self.parent["filename"] + d["subject_ids"][0] +".gdf")
-
-            #TODO add conditional about this path already existing (in GEMIO?)
-            self.data_file = GEMDataFile(filepath)
-
-            self.data_file.write_file_header(d, self.nruns)
+        else:
+            data_file = self.parent.data_file
 
         # Get current run number
-        self.currRun = self.nruns - self.counter
+        krun = self.nruns - self.counter
 
         # write run header
-        self.data_file.write_header(
+        data_file.write_header(
             {
-                "run_number": self.currRun,
+                "run_number": krun,
                 "start_time": get_time()
             }
         )
 
         # Get alpha value for this run & save to presets
         # so we can use it in thread
-        self.parent.presets["currAlpha"] = self.parent.alphas[self.currRun]
+        self.parent.presets["currAlpha"] = self.parent.alphas[krun]
 
-        # class for communicating with the IO thread for this run
-        self.itc = ITC(self.parent.data_viewer)
-
-        print("created ITC object")
-
+        # NOTE: the IO thread should probably be controled by the main GEMGUI
+        # so we don't have to keep creating and destroying it (and passing in
+        # the same agrs) each time -SA 20170707
         # the actual IO thread
-        self.acq = GEMAcquisition(self.itc,
-            self.data_file.filepath,
+        self.acq = GEMAcquisition(self.parent.itc,
+            data_file.filepath,
             self.parent.presets
         )
-        self.acq.start()
-        print("spawned thread")
 
         self.parent.register_cleanup("abort_run", self.close_request)
 
         # begin countdown clock (in python)
-        self.time_remaining = self.parent["run_duration"] + 7
+        self.time_remaining = self.parent["run_duration"] #+ 7
         # ^ this addition of 7 is a hack TODO: FIX
-        # we need to change communication to involve GEMIO and threads
-        # besides just data viewer. will require some redesign.
-        self.update_countdown()
+
+        # starting thread is the last thing we should do
+        self.acq.start()
+        print("spawned thread")
 
     # --------------------------------------------------------------------------
     def close_request(self):
@@ -338,7 +325,8 @@ class ExperimentControl(GEMGUIComponent):
         return "{:02d}:{:02d}".format(mins, secs)
 
     # --------------------------------------------------------------------------
-    def update_countdown(self):
+    # NOTE: msg is just a placeholder for registering as an ITC listener
+    def update_countdown(self, msg=""):
         self["timeleft"].set_text(self.format_time(self.time_remaining))
 
         if self.time_remaining > 0:
@@ -383,31 +371,6 @@ class BasicInfo(GEMGUIComponent):
         return self["experimenter"].get_text()
 
 # ==============================================================================
-# Inter-thread-communicator
-class ITC:
-    def __init__(self, viewer):
-        self.viewer_lock = Lock()
-        self.done_lock = Lock()
-        self.isdone = False
-        self.viewer = viewer
-
-    def send_message(self, msg):
-        self.viewer_lock.acquire()
-        self.viewer.writeToViewer("[REC]: Received %d bytes!" % msg)
-        self.viewer_lock.release()
-
-    def done(self):
-        self.done_lock.acquire()
-        self.isdone = True
-        self.done_lock.release()
-
-    def check_done(self):
-        self.done_lock.acquire()
-        ret = self.isdone
-        self.done_lock.release()
-        return ret
-
-# ==============================================================================
 # Build Main GUI
 # ==============================================================================
 class GEMGUI(Frame):
@@ -419,7 +382,7 @@ class GEMGUI(Frame):
         self.presets["run_duration"] = self["windows"] / self["metronome_tempo"] * 60.0
 
         self.randomize_alphas()
-        self.get_IOI()
+        self.get_ioi()
 
         # Window title
         self.root.title("GEM Arduino acquisition system")
@@ -431,6 +394,24 @@ class GEMGUI(Frame):
         self.basic_info = BasicInfo(self, self.presets["slaves_requested"])
         self.exp_control = ExperimentControl(self)
         self.data_viewer = DataViewer(self)
+
+        # thread for passing messages between IO thread and GUI, making this a
+        # seperate thread prevents the IO thread from getting blocked when
+        # trying to send messages
+        self.itc = ITC()
+
+        # register the data_viewer to receive messages on signal "data_viewer"
+        self.itc.register_listener("data_viewer",
+            self.data_viewer.show)
+
+        # register ExperimentControl.update_countdown method as a listener for
+        # run_start signals
+        self.itc.register_listener("run_start",
+            self.exp_control.update_countdown)
+
+        # make sure we close the ITC thread has a chance to clean up when the
+        # app closes
+        self.register_cleanup("itc_thread", self.itc.close)
 
         self.root.protocol("WM_DELETE_WINDOW", self.on_close)
 
@@ -447,15 +428,12 @@ class GEMGUI(Frame):
         if k in self.cleanup:
             self.cleanup.pop(k)
 
-    def get_IOI(self):
+    def get_ioi(self):
         self.presets["ioi"] = int(60000 / self["metronome_tempo"])
 
     def randomize_alphas(self):
         self.alphas = np.repeat(self["metronome_alpha"], self["repeats"])
         np.random.shuffle(self.alphas)
-
-    def show(self, msg):
-        self.data_viewer.writeToViewer(msg)
 
     def on_close(self):
         doclose = True
@@ -464,6 +442,28 @@ class GEMGUI(Frame):
 
         if doclose:
             self.root.destroy()
+
+    def init_data_file(self):
+        data_dir = os.path.join(self["data_dir"], get_date())
+        if not os.path.exists(data_dir):
+            os.mkdir(data_dir)
+
+        d = copy(self.presets)
+        d["subject_ids"] = self.basic_info.get_subjids()
+        d["experimenter_id"] = self.basic_info.get_experimenter()
+        d["date"] = get_date()
+        d["time"] = get_time()
+
+        # added subid1 to filename - LF
+        filepath = os.path.join(data_dir, self["filename"] +
+            d["subject_ids"][0] +".gdf")
+
+        #TODO add conditional about this path already existing (in GEMIO?)
+        self.data_file = GEMDataFile(filepath)
+
+        self.data_file.write_file_header(d, self.nruns)
+
+        return self.data_file
 
 
 # ==============================================================================
