@@ -1,9 +1,18 @@
 from threading import Thread
 from time import time, sleep
-import json
 import serial
+import json
 import re
 
+# ==============================================================================
+# convert a python int to a bytestring
+def uint64(n):
+    # make sure we add the bytes in low-high order (this has been tested
+    # in one context but needs further testing)
+    nstr = str()
+    for k in range(0, 64, 8):
+        nstr += chr((n >> k) & 0xff)
+    return nstr
 # ==============================================================================
 # parse a string containing a c/c++ uinsigned int literal
 def parse_uint(val):
@@ -38,63 +47,81 @@ def parse_constants(hfile):
 # ==============================================================================
 # class to wrap common data file IO operations (writing headers etc.)
 class GEMDataFile:
-    def __init__(self, filepath):
+    def __init__(self, filepath, nrun):
         self.filepath = filepath
+
+        self._io = open(filepath, "wb+")
+        self.is_open = True
+        self.ptr = 0
 
         # position in the file of the end of the last (run) header
         self.last_header_end = 0
 
         # position in the file of the start of the run header offset list
-        self.header_offset = 0
+        self.idx_map_offset = 0
+
+        # list start and end offsets for each run
+        self.run_offsets = [-1] * nrun
 
         self.current_run = 0
 
-    def uint64(self, n):
-        # make sure we add the bytes in high-low order (this has been tested
-        # in one context but needs further testing)
-        nstr = str()
-        inc = 7
-        for k in range(0, 64, 8):
-            nstr += chr((n >> k) & 0xff)
-            inc -= 1
-        return nstr
+    def close(self):
+        if self.is_open:
+            self.ptr = self._io.tell()
+            self._io.close()
+            self._io = None
+            self.is_open = False
 
-    def write_header(self, hdr_dict, write_offset = True):
-        if write_offset:
-            self.write_run_offset()
+    def reopen(self):
+        if not self.is_open:
+            self._io = open(filepath, "r+b")
+            self._io.seek(self.ptr, 0)
+            self.is_open = True
+
+    def write_header(self, krun, hdr_dict):
+        self.reopen()
+        if krun >= 0:
+            if krun >= len(self.run_offsets):
+                raise ValueError("\"%d\" is not a valid run number!" % krun)
+
+            if self.run_offsets[krun] < 0:
+                self.run_offsets[krun] = self._io.tell()
+                self.write_run_offset(krun, self.run_offsets[krun])
+            else:
+                # the current run <krun> was previously aborted, so seek back
+                # to where that run started to overwrite that run's data
+                self._io.seek(self.run_offsets[krun], 0)
 
         hdr_str = json.dumps(hdr_dict)
         nel = len(hdr_str)
 
-        with open(self.filepath, "ab") as io:
-            # Write the length of the header dict as an 8 byte unsigned int
-            io.write(self.uint64(nel))
-            io.write(hdr_str)
-            self.last_header_end = io.tell()
+        # Write the length of the header dict as an 8 byte unsigned int
+        self._io.write(uint64(nel))
+        self._io.write(hdr_str)
 
     def write_file_header(self, d, nruns):
-        self.write_header(d, False)
-        self.header_offset = self.last_header_end
+        self.reopen()
+        self._io.seek(0, 0)
+        self.write_header(-1, d)
 
         # initialize a block of run_header offsets with 64bit 0s
-        with open(self.filepath, "ab") as io:
-            zero64 = '\x00' * 8
-            io.write(zero64 * nruns)
-            self.last_header_end = io.tell()
+        print("Writing idx_map @ {}".format(self._io.tell()))
+        self.idx_map_offset = self._io.tell()
+        self._io.write('\x00' * 8 * nruns)
 
-    def write_run_offset(self):
-        offset = 0
-        with open(self.filepath, "ab") as io:
-            io.seek(0, 2)
-            offset = io.tell()
-            io.seek(self.header_offset + (self.current_run * 8), 0)
-            io.write(self.uint64(offset))
+    def write_run_offset(self, krun, offset):
+        self.reopen()
+        ptr = self._io.tell()
+        print("Writing run {} offset at: {}".format(krun, self.idx_map_offset + (krun * 8)))
+        self._io.seek(self.idx_map_offset + (krun * 8), 0)
+        self._io.write(uint64(offset))
+        self._io.seek(ptr, 0)
 
-        self.current_run += 1
-
+# ==============================================================================
+# class for debuging GEMIO systems w/o Arduino connection
 class SerialSpoof:
     def __init__(self):
-        self.in_waiting = 1
+        self.in_waiting = 17
         self.x = 0
 
     def write(self, msg):
@@ -104,35 +131,33 @@ class SerialSpoof:
         print(foo)
 
     def read(self, n):
-        self.in_waiting += 1
-        return '\x00'
+        sleep(0.4)
+        return '\xff' + '\x01\x00' + '\x02\x00\x00\x00' + '\x03\x00' + '\x04\x00' + '\x05\x00' + '\x06\x00' + '\x07\x00'
 
     def readline(self):
         sleep(.050)
-
-    def flushOutput(self):
-        pass
 
     def close(self):
         pass
 
     def isOpen(self):
         return True
+
 # ==============================================================================
 # GEMIO resource manager: allow for automatic resource clean up when used in
 # a with statement
 class GEMIOManager:
     # --------------------------------------------------------------------------
-    def __init__(self, serial_ifo, filepath):
+    def __init__(self, serial_ifo, datafile):
         self.ifo = serial_ifo
-        self.filepath = filepath
+        self.datafile = datafile
     # --------------------------------------------------------------------------
     def __enter__(self):
         # ======================================================================
         # the actual GEMIO resource
         class GEMIOResource:
-            def __init__(self, ifo, filepath):
-                print(ifo)
+            def __init__(self, ifo, datafile):
+
                 self.com = serial.Serial(
                     port=ifo["port"],
                     baudrate=ifo["baud_rate"],
@@ -144,29 +169,28 @@ class GEMIOManager:
                 if self.com.isOpen():
                     print("serial is open!")
 
-                self.file = open(filepath, "ab")
+                self.file = datafile
+                self.file.reopen()
 
             def close(self):
                 self.com.close()
                 self.file.close()
 
             def send(self, msg):
-                # print("sending %d to arduino" % ord(msg[0]))
                 self.com.write(msg)
 
             def flush(self):
                 self.com.flush()
 
             def commit(self, n):
-                self.file.write(self.com.read(n))
+                self.file._io.write(self.com.read(n))
 
             def available(self):
-                sleep(.5)
                 return self.com.in_waiting
 
         # ======================================================================
 
-        self.io = GEMIOResource(self.ifo, self.filepath)
+        self.io = GEMIOResource(self.ifo, self.datafile)
 
         return self.io
     # --------------------------------------------------------------------------
@@ -176,34 +200,35 @@ class GEMIOManager:
 # ==============================================================================
 #
 class GEMAcquisition(Thread):
-    def __init__(self, itc, filepath, presets):
+    def __init__(self, datafile, itc, presets, alpha):
 
         Thread.__init__(self)
 
-        self.constants = parse_constants(presets["hfile"])
-        # print(self.constants)
+        self.datafile = datafile
         self.itc = itc
+
+        self.constants = parse_constants(presets["hfile"])
         self.serial_ifo = presets["serial"]
-        self.filepath = filepath
         self.run_duration = presets["run_duration"]
-        self.tempo = int(presets["metronome_tempo"])
-        self.tempo = self.constants["GEM_METRONOME_TEMPO"] + str(self.tempo)
-        self.currAlpha = self.constants["GEM_METRONOME_ALPHA"] + str(presets["currAlpha"])
+
+        self.tempo = self.constants["GEM_METRONOME_TEMPO"] + str(int(presets["metronome_tempo"]))
+
+        self.alpha = self.constants["GEM_METRONOME_ALPHA"] + str(alpha)
 
     # override Thread.run()
     def run(self):
-        with GEMIOManager(self.serial_ifo, self.filepath) as io:
+        with GEMIOManager(self.serial_ifo, self.datafile) as io:
 
             # allow some time for handshake!
             io.com.readline()
 
             # send relevant parameters to arduino
-            self.itc.send_message("data_viewer", "Sending tempo to arduino: " + self.tempo)
+            self.itc.send_message("data_viewer", "Sending tempo to arduino: " + self.tempo[1:])
             io.send(self.tempo)
             sleep(0.100)
 
-            self.itc.send_message("data_viewer", "Sending alpha to arduino: " + self.currAlpha)
-            io.send(self.currAlpha)
+            self.itc.send_message("data_viewer", "Sending alpha to arduino: " + self.alpha[1:])
+            io.send(self.alpha)
             sleep(0.100)
             #
             # # TODO: wait for master to tell us it's ready?
@@ -228,11 +253,8 @@ class GEMAcquisition(Thread):
 
                     # notify data viewer that we've received some data
                     self.itc.send_message("data_viewer", n)
-                    # print("Sending to itc: %d" % n)
 
                 done = self.itc.check_done()
-
-                io.com.flushOutput()
 
             io.send(self.constants["GEM_STOP"])
 
