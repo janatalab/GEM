@@ -232,6 +232,8 @@ class ExperimentControl(GEMGUIComponent):
 
         self.time_remaining = 0
 
+        self.running = False
+
     # --------------------------------------------------------------------------
     def initArduino(self):
         # send everything to Arduino
@@ -263,28 +265,22 @@ class ExperimentControl(GEMGUIComponent):
         krun = self.nruns - self.counter
 
         # write run header
-        data_file.write_header(
+        data_file.write_header(krun,
             {
                 "run_number": krun,
                 "start_time": get_time()
             }
         )
 
-        # Get alpha value for this run & save to presets
-        # so we can use it in thread
-        self.parent.presets["currAlpha"] = self.parent.alphas[krun]
+        # the actual IO thread
+        self.acq = GEMAcquisition(data_file,
+            self.parent.itc,
+            self.parent.presets,
+            self.parent.alphas[krun]
+        )
 
         # make sure the itc is in the not-done state
         self.parent.itc.set_done(False)
-
-        # NOTE: the IO thread should probably be controled by the main GEMGUI
-        # so we don't have to keep creating and destroying it (and passing in
-        # the same agrs) each time -SA 20170707
-        # the actual IO thread
-        self.acq = GEMAcquisition(self.parent.itc,
-            data_file.filepath,
-            self.parent.presets
-        )
 
         self.parent.unregister_cleanup("itc_thread")
         self.parent.register_cleanup("abort_run", self.close_request)
@@ -295,6 +291,8 @@ class ExperimentControl(GEMGUIComponent):
         # starting thread is the last thing we should do
         self.acq.start()
         print("spawned thread")
+
+        self.running = True
 
     # --------------------------------------------------------------------------
     def close_request(self):
@@ -310,13 +308,16 @@ class ExperimentControl(GEMGUIComponent):
     # --------------------------------------------------------------------------
     def clean_up(self):
         print("Asking IO thread to terminate")
-        self.acq.join()
-        self.timer.cancel()
-        self.time_remaining = 0
-        self["timeleft"].set_text("00:00")
-        self.parent.unregister_cleanup("abort_run")
-        self.parent.register_cleanup("itc_thread", self.parent.itc.close)
-        self["ss"].enable("Start")
+        if self.running:
+            self.acq.join()
+            self.timer.cancel()
+            self.time_remaining = 0
+            self["timeleft"].set_text("00:00")
+            self.parent.unregister_cleanup("abort_run")
+            self.parent.register_cleanup("itc_thread", self.parent.itc.close)
+            self["ss"].enable("Start")
+
+            self.running = False
 
     # --------------------------------------------------------------------------
     def end_run(self):
@@ -398,6 +399,7 @@ class GEMGUI(Frame):
         self.exp_control = ExperimentControl(self)
         self.data_viewer = DataViewer(self)
 
+
         # thread for passing messages between IO thread and GUI, making this a
         # seperate thread prevents the IO thread from getting blocked when
         # trying to send messages
@@ -464,10 +466,10 @@ class GEMGUI(Frame):
         filepath = os.path.join(data_dir, self["filename"] +
             d["subject_ids"][0] +".gdf")
 
-        #TODO add conditional about this path already existing (in GEMIO?)
-        self.data_file = GEMDataFile(filepath)
-
         nruns = len(self.alphas)
+
+        #TODO add conditional about this path already existing (in GEMIO?)
+        self.data_file = GEMDataFile(filepath, nruns)
         self.data_file.write_file_header(d, nruns)
 
         return self.data_file
