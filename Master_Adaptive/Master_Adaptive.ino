@@ -49,8 +49,8 @@
 #include "Lock.h"
 
 
-// NOTE: if you are sending messages from the Arduino serial monitor for debugging purposes, 
-// send the family code then value separated by a space. If you send them in succession Arduino 
+// NOTE: if you are sending messages from the Arduino serial monitor for debugging purposes,
+// send the family code then value separated by a space. If you send them in succession Arduino
 // does not respond properly. - LF 20170706
 
 //#define MAX_SLAVES 4
@@ -329,7 +329,7 @@ void idle()
                 Serial.print("IOI set to: ");
                 Serial.println(met.getIOI());
 #endif
-                
+
                 break;
 
             //NOTE: potential error reporting system:
@@ -443,7 +443,7 @@ void run()
             Serial.write(GEM_DTP_RAW);
 
             // Send current window to ECC - 20170703 LF
-            Serial.write(window);
+            Serial.write((byte *)window, sizeof (uint16_t));
 
             /*NOTE: next, send the scheduled time of the metronome tone for
             this window, which is what the asynchronies are relative too, see
@@ -475,13 +475,13 @@ void run()
             disable interrupts while we read a value from <currAsynch>
             -SA 20170702
             */
-            {             
+            {
                 ScopedVolatileLock lock;
                 Serial.write((byte *)currAsynch, sizeof (int) * GEM_MAX_SLAVES);
 
                 // Send calculated metronome adjustment to ECC
                 Serial.write((byte *)&asynchAdjust, sizeof (int));
-                
+
                 // reset the current tap times
                 for (uint8_t s = 0; s < GEM_MAX_SLAVES; s++)
                 {
