@@ -19,7 +19,7 @@ presets = {
     "filename": "GEM_1playerData_",
     "data_dir": "/Users/laurenfink/Documents/Arduino/",
     # "sound_dir": "<sound_dir>",
-    "slaves_requested": 1, #NB: only 3 slaves working in Davis rig
+    "slaves_requested": 1, 
     #"master_sound": "1.WAV",
     # "slave_sound": "1.WAV",
     "metronome_alpha": [0, 0.25, 0.5, 0.75, 1],
