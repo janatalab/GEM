@@ -56,6 +56,12 @@ function convert_file(ifile::String, ofile::String)
             write_run(io, hdr, data, k)
         end
     end
+
+    jfile = splitext(ofile)[1] * ".json"
+    open(jfile, "w") do io
+        write(io, JSON.json(df.hdr))
+    end
+    return nothing
 end
 # ---------------------------------------------------------------------------- #
 # Columns: run #, window #, scheduled click, async 1-4, next_adjust
