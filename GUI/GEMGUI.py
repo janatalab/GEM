@@ -2,22 +2,19 @@
 # -*- coding: utf-8 -*-
 
 # Basic Graphical User Interface (GUI) for GEM experiments
-# Most parameters loaded from GEM_presets file so user has very little to enter
 # Run gem_example.py to view current GUI
 
 # LF TODO:
-# Decode incoming bytes on the fly
-# -- this is where we will compare ECC window count to master window count
-# Check user imput for completeness
-# Reformat output file to be human-readable
-# Update countdown clock to start at appropriate time
-# Implement Error handling
+# Implement Error handling on master side (e.g. couldn't find audio file)
+# --- not a huge priority
 # Implement audio feedback conditions
 # --- send message to experimenter about what to do
-# Set slave sound from ECC - this might have to wait until v2
+# Set slave sound from ECC
+# --- this should wait until v2
 
 import Tkinter
 from Tkinter import Tk, Label, Button, Entry, StringVar, Frame, OptionMenu, Text
+from tkMessageBox import showerror
 from threading import Timer
 from datetime import date, datetime
 from copy import copy
@@ -211,8 +208,6 @@ class ExperimentControl(GEMGUIComponent):
 
         self.set_title("Experiment Control Panel")
 
-        # TODO: implement set-up button and appropriate callback?
-
         # Start and Escape buttons
         spec = {"Start": self.start_run, "Abort": self.abort_run}
         self.add_row("ss", ButtonGroup(self, spec, 39))
@@ -235,23 +230,27 @@ class ExperimentControl(GEMGUIComponent):
         self.running = False
 
     # --------------------------------------------------------------------------
-    def initArduino(self):
-        # send everything to Arduino
-        self.parent.show("Ready to Jam!")
+    def check_user_input(self):
 
-        # check user input for correctness (really subj/experimenter ids)
-        # wait on master to tell us that everything is ready, then enable the
-        # start button
+        exp_id = self.parent.basic_info.get_experimenter()
+        if not exp_id:
+            showerror("Missing Experimenter ID", "Please enter an experimenter ID")
+            return False
 
-        # if everything checks out, we can spwan the data acq thread so that
-        # we are ready for incoming data as soon as
+        ids = self.parent.basic_info.get_subjids()
+        for id in ids:
+            if not id:
+                showerror("Missing Subject ID", "Please enter an ID for all subjects")
+                return False
 
-        # Inititalize Arduino button
-        # Callback for this button should send all info to Arduino AND open file
-        # to write experiment data
+        return True
 
     # --------------------------------------------------------------------------
     def start_run(self):
+
+        if not self.check_user_input():
+            return
+
         # disable start button
         self["ss"].disable("Start")
 
@@ -462,9 +461,9 @@ class GEMGUI(Frame):
         d["date"] = get_date()
         d["time"] = get_time()
 
-        # added subid1 to filename - LF
-        filepath = os.path.join(data_dir, self["filename"] +
-            d["subject_ids"][0] +".gdf")
+        # create file name from presets and subids
+        filepath = os.path.join(data_dir, self["filename"] + "-" +
+            "_".join(d["subject_ids"]) + ".gdf")
 
         nruns = len(self.alphas)
 
