@@ -4,6 +4,8 @@
 
 // 19Mar2017 Petr Janata
 
+// Don't think we're using this anymore - LF 20180109
+
 #include "Arduino.h"
 #include "GEMreport.h"
 #include "GEMConstants.h"

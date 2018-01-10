@@ -1,13 +1,10 @@
 ///////////////////////////////////////////////////////////////////
 
 /*
-    GEM.cpp - Library of utilities used in GEM projects
-    Wisam Reid, Lauren Fink, David Miranda
-    December 2017
+Implementation of adaptive metronome class
+
 
 */
-
-// 19Mar2017 Petr Janata - migrated sound playing stuff into GEMsound; added Metronome class
 
 ///////////////////////////////////////////////////////////////////
 #include "Arduino.h"
@@ -18,9 +15,6 @@
 ///////////////////////////////////////////////////////////////////
 
 #define DEBUG
-
-// GEM constructor
-GEM::GEM() {}
 
 ///////////////////////////////////////////////////////////////////
 ////////// METRONOME CLASS //////////
@@ -108,7 +102,7 @@ int Metronome::scheduleNext(volatile int asynchArray[], volatile bool isActive[]
         //-SA 20170702
         if (numResponse > 0) {
             asynchAdjust = floor(asynchSum / numResponse * alpha);
-        } 
+        }
         else {
             asynchAdjust = 0;
         }

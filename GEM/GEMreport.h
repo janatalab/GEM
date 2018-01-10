@@ -4,6 +4,8 @@
 
 // 19Mar2017 Petr Janata
 
+// Don't think we're using this anymore - LF 20180109
+
 #ifndef GEMreport_h
 #define GEMreport_h
 

@@ -5,7 +5,9 @@
 
 /* =============================================================================
 NOTE: A <ScopedVolatileLock> is used to ensure unique access to a volatile
-variable *OUTSIDE* of an ISR (ISRs are automatically disabled within ISRs). I.E. one should be used when writing to a variable that is read within an ISR *OR* reading from a variable that is written to within an ISR. The lock works by
+variable *OUTSIDE* of an ISR (ISRs are automatically disabled within ISRs).
+I.E. one should be used when writing to a variable that is read within an ISR
+*OR* reading from a variable that is written to within an ISR. The lock works by
 saving the state of the status register and disabling interupts in the
 constructor, then resetting the status register upon destruction.
 WARNING: the behavior of this class depends entirely on scope, so it
