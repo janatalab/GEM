@@ -1,17 +1,20 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
-# Basic Graphical User Interface (GUI) for GEM experiments
-# Run gem_example.py to view current GUI
+'''
+# Basic Graphical User Interface (GUI) for GEM experiments.
+#   - run gem_example.py to view the GUI
 
 # LF TODO:
-# Write out alpha value on each run
+# Write out alpha value on each run to .gdf file; also need to write individual
+# run headers to .json file
 # Implement Error handling on master side (e.g. couldn't find audio file)
 # --- not a huge priority
 # Implement audio feedback conditions
 # --- send message to experimenter about what to do
 # Set slave sound from ECC
 # --- this should wait until v2
+'''
 
 import Tkinter
 from Tkinter import Tk, Label, Button, Entry, StringVar, Frame, OptionMenu, Text
