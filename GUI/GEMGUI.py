@@ -466,6 +466,9 @@ class GEMGUI(Frame):
         d["date"] = get_date()
         d["time"] = get_time()
 
+        # all randomized alpha values for each run to the gdf fileheader
+        d["alpha_order"] = self.alphas
+
         # create file name from presets and subids
         filepath = os.path.join(data_dir, self["filename"] + "-" +
             "_".join(d["subject_ids"]) + ".gdf")
