@@ -5,6 +5,7 @@
 # Run gem_example.py to view current GUI
 
 # LF TODO:
+# Write out alpha value on each run
 # Implement Error handling on master side (e.g. couldn't find audio file)
 # --- not a huge priority
 # Implement audio feedback conditions
@@ -441,6 +442,10 @@ class GEMGUI(Frame):
     def randomize_alphas(self):
         self.alphas = np.repeat(self["metronome_alpha"], self["repeats"])
         np.random.shuffle(self.alphas)
+
+        # TODO: need to save random list and write to header and ideally to
+        # output file; otherwise, don't know what alpha value corresponds to
+        # which run...
 
     def on_close(self):
         doclose = True
