@@ -74,7 +74,7 @@ class GEMDataFile:
 
     def reopen(self):
         if not self.is_open:
-            self._io = open(filepath, "r+b")
+            self._io = open(self.filepath, "r+b")
             self._io.seek(self.ptr, 0)
             self.is_open = True
 
