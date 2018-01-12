@@ -37,7 +37,7 @@ end
 function convert_file(ifile::String, ofile::String)
 
     df = GEMDataFile(ifile)
-    hdr = Vector{Dict}(df.nrun)
+    hdrs = Vector{Dict}()
 
     open(ofile, "w") do io
         labels = join(["\"async_$(x)\"" for x in 1:MAX_SLAVES], ", ")
@@ -47,16 +47,17 @@ function convert_file(ifile::String, ofile::String)
             """
         )
         for k = 1:df.nrun
-            hdr[k], data = read_run(df, k)
+            hdr, data = read_run(df, k)
             if isempty(data)
                 break
             end
-            write_run(io, hdr[k], data, k)
+            push!(hdrs, hdr)
+            write_run(io, hdr, data, k)
         end
-    end
 
-    # add run headers to the file header dict for output
-    df.hdr["run_headers"] = hdr
+        # add run headers to the file header dict for output
+        df.hdr["run_headers"] = hdrs
+    end
 
     jfile = splitext(ofile)[1] * ".json"
     open(jfile, "w") do io
