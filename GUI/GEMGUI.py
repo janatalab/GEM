@@ -268,7 +268,8 @@ class ExperimentControl(GEMGUIComponent):
         data_file.write_header(krun,
             {
                 "run_number": krun,
-                "start_time": get_time()
+                "start_time": get_time(),
+                "alpha": self.parent.alphas[krun]
             }
         )
 
