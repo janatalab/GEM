@@ -30,9 +30,6 @@ function GEMDataFile(filepath::String)
         nrun = length(hdr["metronome_alpha"]) * Int64(hdr["repeats"])
         idx_map = read(io, UInt64, nrun)
 
-        seekend(io)
-        len = position(io)
-
         return GEMDataFile(filepath, hdr, idx_map, nrun, Int(hdr["windows"]))
     end
 end
@@ -45,7 +42,7 @@ function convert_file(ifile::String, ofile::String)
         labels = join(["\"async_$(x)\"" for x in 1:MAX_SLAVES], ", ")
         write(io,
             """
-            \"run\", \"window\", \"click_time\", $(labels), \"next_adjust\"
+            \"run\", \"alpha\", \"window\", \"click_time\", $(labels), \"next_adjust\"
             """
         )
         for k = 1:df.nrun
@@ -64,11 +61,11 @@ function convert_file(ifile::String, ofile::String)
     return nothing
 end
 # ---------------------------------------------------------------------------- #
-# Columns: run #, window #, scheduled click, async 1-4, next_adjust
+# Columns: run #, alpha, window #, scheduled click, async 1-4, next_adjust
 function write_run(io::IOStream, hdr::Dict, data::Vector{GEMPacket},
     run::Integer)
     for k in eachindex(data)
-        write(io, "$(run), $(k), " * tostring(data[k]) * "\n")
+        write(io, "$(run), $(hdr["alpha"]), $(k), " * tostring(data[k]) * "\n")
     end
 end
 # ---------------------------------------------------------------------------- #
