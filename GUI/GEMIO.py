@@ -185,6 +185,11 @@ class GEMIOManager:
             def commit(self, n):
                 self.file._io.write(self.com.read(n))
 
+            def commit_debug(self, n):
+                msg = self.com.read(n)
+                self.file._io.write(msg)
+                return msg
+
             def available(self):
                 return self.com.in_waiting
 
@@ -253,6 +258,12 @@ class GEMAcquisition(Thread):
 
                     # notify data viewer that we've received some data
                     self.itc.send_message("data_viewer", n)
+
+                    # NOTE: echo incoming data to the data-viewer for debugging
+                    # msg *SHOULD* be a byte-string... so I think we can just
+                    # display as is in the data viewer
+                    # msg = io.commit_debug(n)
+                    # self.itc.send_message("data_viewer", msg)
 
                 done = self.itc.check_done()
 
