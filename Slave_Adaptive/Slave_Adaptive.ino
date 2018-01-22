@@ -26,7 +26,7 @@
 // Set the address for this slave. 
 // This needs to be unique to each tapper (slave), and must therefore
 // be changed as each sketch is compiled and uploaded to each slave device
-#define ADDRESS 3
+#define ADDRESS 4
 
 
 

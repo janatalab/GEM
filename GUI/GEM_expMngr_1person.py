@@ -22,9 +22,9 @@ import os
 rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
 
 presets = {
-    "serial": {"port": "/dev/cu.usbmodem141111", "baud_rate": 115200, "timeout": 5},
+    "serial": {"port": "/dev/tty.usbmodem1411111", "baud_rate": 115200, "timeout": 5},
     "filename": "GEM_1playerPilot_",
-    "data_dir": "/Users/laurenfink/Documents/Arduino/", #TODO: change on lab computer
+    "data_dir": "/Users/janatalab/Documents/Arduino/Data", #TODO: change on lab computer
     "hfile": rootpath + "GEM/GEM/GEMConstants.h",
     "slaves_requested": 1,
     "metronome_alpha": [0, 0.25, 0.5, 0.75, 1],
