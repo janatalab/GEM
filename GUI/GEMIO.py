@@ -248,6 +248,9 @@ class GEMAcquisition(Thread):
 
             io.send(self.constants["GEM_START"])
 
+            # track bytes received for debugging
+            total = 0
+
             tstart = time()
             done = self.itc.check_done()
             while (not done) and (time() < (tstart + self.run_duration)):
@@ -265,8 +268,12 @@ class GEMAcquisition(Thread):
                     # msg = io.commit_debug(n)
                     # self.itc.send_message("data_viewer", msg)
 
+                    # update byte count
+                    # total += n
+
                 done = self.itc.check_done()
 
             io.send(self.constants["GEM_STOP"])
 
+            print("[INFO]: Received {} bytes of data during this run".format(total))
             print("IO thread terminated")
