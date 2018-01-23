@@ -1,6 +1,6 @@
 // GEMsound.cpp
 
-// TODO: 19Mar2017 Need better, more dynamic indexing scheme. 
+// TODO: 19Mar2017 Need better, more dynamic indexing scheme.
 //                 As of right now, we're just looking for a file named 1.WAV
 
 // 18Mar2017 Petr Janata - started code
@@ -10,12 +10,7 @@
 #include "GEMsound.h"
 
 // GEMSound constructor
-GEMSound::GEMSound(){
-
-  // Get a connection to the reporting interface
-  GEMReport r;
-
-}
+GEMSound::GEMSound() {}
 
 // Public wrapper for playSoundFile()
 void GEMSound::play(void){
@@ -24,21 +19,28 @@ void GEMSound::play(void){
 
 // setup the SD Card
 void GEMSound::setupSDCard(void){
-  // Basic info message
-  r.infostr("Setting up SD card");
 
-  // WAVE HC card init
-  if (!card.init()) r.error(ERR_WAVEHC_CARD_INIT);
+#ifdef DEBUG
+  Serial.println("Init SD card");
+#endif
+
+  // WAVE HC card init TODO
+  // if (!card.init()) r.error(ERR_WAVEHC_CARD_INIT);
+
+  card.init();
 
   // enable optimized read - some cards may timeout
   card.partialBlockRead(true);
 
   // initialize volume
-  // This holds the information for the partition on the card
-  if (!vol.init(card)) r.error(ERR_WAVEHC_CARD_INIT);
+  // This holds the information for the partition on the card TODO
+  // if (!vol.init(card)) r.error(ERR_WAVEHC_CARD_INIT);
 
-  // This holds the information for the volumes root directory
-  if (!root.openRoot(vol)) r.error(ERR_WAVEHC_ROOT_OPEN);
+  // This holds the information for the volumes root directory TODO
+  // if (!root.openRoot(vol)) r.error(ERR_WAVEHC_ROOT_OPEN);
+
+  vol.init(card);
+  root.openRoot(vol);
 }
 
 void GEMSound::indexFiles(void){
@@ -71,9 +73,12 @@ FatReader GEMSound::loadByName(char *str){
 //  if (!file.open(root, fileIndex[index])) err("open by index");
  //if (!_file.open(root, _index)) r.error(ERR_WAVEHC_OPEN_BY_INDEX);
 
-  // Open file by name
-  if (!_file.open(root, str)) r.error(ERR_WAVEHC_OPEN_BY_NAME);
-  if (!wave.create(_file)) r.error(ERR_WAVEHC_WAVE_CREATE);
+  // Open file by name TODO
+  // if (!_file.open(root, str)) r.error(ERR_WAVEHC_OPEN_BY_NAME);
+  // if (!wave.create(_file)) r.error(ERR_WAVEHC_WAVE_CREATE);
+
+  _file.open(root, str);
+  wave.create(_file);
 
   return _file;
 }
@@ -104,5 +109,4 @@ void GEMSound::playSoundFile(FatReader _file){
 
  //  // Rewind
  //  wave.seek(0);
-  
 }
