@@ -269,7 +269,7 @@ class GEMAcquisition(Thread):
                     # self.itc.send_message("data_viewer", msg)
 
                     # update byte count
-                    # total += n
+                    total += n
 
                 done = self.itc.check_done()
 
