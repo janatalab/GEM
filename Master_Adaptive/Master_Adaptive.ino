@@ -29,10 +29,6 @@
 // I2C Communication library
 #include <Wire.h>
 
-// DEFINES for compiler
-//#define DEBUG
-#undef DEBUG
-
 // GEM constants
 #include <GEMConstants.h>
 
@@ -48,6 +44,10 @@
 // for ScopedVolatileLock
 #include "Lock.h"
 
+
+#ifdef DEBUG
+  #pragma message("DEBUG MODE IS ON")
+#endif
 
 // NOTE: if you are sending messages from the Arduino serial monitor for debugging purposes,
 // send the family code then value separated by a space. If you send them in succession Arduino
@@ -164,9 +164,14 @@ Helper functions
 ============================================================================= */
 inline void wire_write(uint8_t slaveid, uint8_t val)
 {
+//    Serial.print("Sending ");
+//    Serial.print(val);
+//    Serial.print(" to slave ");
+//    Serial.println(slaveid);
     Wire.beginTransmission(slaveid); // transmit to device #
     Wire.write(val);                 // sends one byte
     Wire.endTransmission();          // stop transmitting
+//    Serial.println("Done transmitting");
 }
 /* -------------------------------------------------------------------------- */
 void write_to_slaves(uint8_t val)
@@ -201,16 +206,16 @@ void setup()
     Serial.begin(GEM_SERIAL_BAUDRATE);
 
     // Enable the Wire interface for I2C communication
-    report.infostr("Enabling I2C");
+    // report.infostr("Enabling I2C");
     Wire.begin(); // master does not need address
 
     // Enable PINs for flashing LEDs
-    report.infostr("Enabling diagnostic LEDs");
+    // report.infostr("Enabling diagnostic LEDs");
     pinMode(LEDPin, OUTPUT); // Interrupt
     pinMode(metronomeLED, OUTPUT); // Metronome
 
     // Check to see which slaves are connected
-    report.infostr("Checking for connected slaves");
+    // report.infostr("Checking for connected slaves");
     for (uint8_t s = 0; s < GEM_MAX_SLAVES; s++)
     {
         //NOTE: because the logic here is so procedural (the handshake
@@ -245,7 +250,7 @@ void setup()
         if (slaveIsConnected[currSlave])
         {
 #ifdef DEBUG
-            Serial.print("Found slave using interrupt: ");
+            Serial.print("Found slave: ");
             Serial.println(currPin);
 #endif
             // Attach our desired ISR
@@ -253,6 +258,9 @@ void setup()
         }
         else
         {
+#ifdef DEBUG
+            Serial.println("Slave connect failed");
+#endif
             // flash LED
             digitalWrite(LEDPin, HIGH);
             delay(500);
@@ -262,23 +270,31 @@ void setup()
 
 #ifdef DEBUG
     // Report on number of active slaves
-    Serial.print("#active slaves: ");
+    Serial.print("# slaves: ");
     Serial.println(numSlaves);
 #endif
 
     // Initialize the sound card
     sound.setupSDCard();
 
-#ifdef DEBUG
-    // Load a sound file
-    report.infostr("Loading sound file");
-#endif
+// #ifdef DEBUG
+//     // Load a sound file
+//     report.infostr("Loading sound file");
+// #endif
 
     sound.loadByName(soundName);
 
+    {
+        ScopedVolatileLock lock;
+        for (uint8_t k = 0; k < GEM_MAX_SLAVES; ++k)
+        {
+          currAsynch[k] = NO_RESPONSE;
+        }
+    }
+
 #ifdef DEBUG
-    report.infostr("Done loading sound file");
-    Serial.println("Send 1 from console to start");
+    // report.infostr("Done loading sound file");
+    Serial.println("Send 4 then 1 to start");
 #endif
 } // setup()
 
@@ -300,7 +316,7 @@ void idle()
         // -SA 20170706
 #ifdef DEBUG
         uint8_t msg = (uint8_t)Serial.parseInt();
-        Serial.print("Received: ");
+        Serial.print("Rec: ");
         Serial.println(msg);
 #else
         uint8_t msg = (uint8_t)Serial.read();
@@ -309,13 +325,16 @@ void idle()
         switch (msg)
         {
             case GEM_STATE_RUN:
+#ifdef DEBUG
+                Serial.println("GEM_STATE_RUN");
+#endif
                 GEM_CURRENT_STATE = GEM_STATE_RUN;
                 break;
 
             case GEM_METRONOME_ALPHA:
                 met.alpha = Serial.parseFloat();
 #ifdef DEBUG
-                Serial.print("Alpha set to: ");
+                Serial.print("Alpha: ");
                 Serial.println(met.alpha);
 #endif
                 break;
@@ -326,7 +345,7 @@ void idle()
                 //updated gets updated -SA 20170706
                 met.setTempo(Serial.parseInt());
 #ifdef DEBUG
-                Serial.print("IOI set to: ");
+                Serial.print("IOI: ");
                 Serial.println(met.getIOI());
 #endif
 
@@ -359,6 +378,8 @@ void run()
     {
 #ifdef DEBUG
         uint8_t msg = (uint8_t)Serial.parseInt();
+        Serial.print("Rec: ");
+        Serial.println(msg);
 #else
         uint8_t msg = (uint8_t)Serial.read();
 #endif
@@ -382,7 +403,7 @@ void run()
                 break;
 #ifdef DEBUG
             default:
-                Serial.print("Unknown msg: ");
+                Serial.print("Unknown: ");
                 Serial.println(msg);
 #endif
         }
@@ -483,7 +504,7 @@ void run()
                 Serial.write((byte *)&asynchAdjust, sizeof (int));
 
                 // reset the current tap times
-                for (uint8_t s = 0; s < GEM_MAX_SLAVES; s++)
+                for (uint8_t s = 0; s < GEM_MAX_SLAVES; ++s)
                 {
                     currAsynch[s] = NO_RESPONSE;
                 }
@@ -493,10 +514,13 @@ void run()
             window++;
 
 #ifdef DEBUG
-            Serial.print("Scheduled ");
+            Serial.print("Schd ");
             Serial.print(window);
             Serial.print(": ");
             Serial.println(met.next);
+
+            Serial.print("Now: ");
+            Serial.println(currentTime);
 #endif
         } // if (currentTime >= windowEnds)
 
@@ -504,13 +528,15 @@ void run()
         if ((currentTime >= met.next) && !met.played)
         {
 #ifdef DEBUG
-            //Serial.print("Played: ");
-            Serial.println(currentTime);
+            Serial.println("SND");
 #endif
-
             sound.play(); // play the sound
 
             met.played = true; // flag that it has been played
+
+#ifdef DEBUG
+            Serial.println("USND");
+#endif
         }
     } //if (TRIAL_RUNNING)
 
