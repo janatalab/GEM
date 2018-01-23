@@ -34,7 +34,6 @@ public:
 
 private:
   int _index;
-  GEMReport r; // reporting instance
 
 protected:
   //////// VARIABLES
