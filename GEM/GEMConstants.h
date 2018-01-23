@@ -10,7 +10,7 @@
 #define GEMCONSTANTS_H_
 
 // #define DEBUG
-//#undef DEBUG
+#undef DEBUG
 
 /* -----------------------------------------------------------------------------
 NOTE: I've changed the constants system to use a more structured organization
