@@ -14,11 +14,9 @@ Implementation of adaptive metronome class
 #include "Lock.h"
 ///////////////////////////////////////////////////////////////////
 
-#define DEBUG
-
 ///////////////////////////////////////////////////////////////////
 ////////// METRONOME CLASS //////////
-Metronome::Metronome()
+Metronome::Metronome() : next(0)
 {
     // Specify default values for the metronome
 
