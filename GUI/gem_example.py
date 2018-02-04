@@ -1,3 +1,7 @@
+'''
+Presets for use in debugging.
+'''
+
 from GEMGUI import GEMGUI
 import os
 
@@ -5,30 +9,17 @@ rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
 
 presets = {
     "serial": {"port": "/dev/cu.usbmodem1451111", "baud_rate": 115200, "timeout": 5},
-    "filename": "GEM_data",
-    "data_dir": rootpath,
+    "filename": "throughput",
+    "data_dir": rootpath + "Data/", #TODO: change on lab computer
     "hfile": rootpath + "GEM/GEM/GEMConstants.h",
-    # "sound_dir": "<sound_dir>",
-    "slaves_requested": 3, #NB: only 3 slaves working in Davis rig
-    #"master_sound": "1.WAV",
-    # "slave_sound":  [
-    #                     "1.WAV",
-    #                     "1.WAV",
-    #                     "1.WAV"
-    #                 ],
-    "metronome_alpha": [0.0, 0.25, 0.5, 0.75, 1.0],
-    "metronome_tempo": 150.0, #units: beats-per-minute
-    "repeats": 2.0,
-    "windows": 50.0, #number of windows
-
-    # TODO: deal with audio_feedback
-    # control the master sound, send message to experimenter through data viewer
-    # run trials blocked by audio feeback. randomize order of audio feedback
-    "audio_feedback": ["hear_none", "hear_self", "hear_all"],
-    "metronome_heuristic": ["average"] # more to come
-
+    "slaves_requested": 1,
+    "metronome_alpha": [0],
+    "metronome_tempo": 120.0, #units: beats-per-minute
+    "repeats": 1,#10, #fairhurst was 12
+    "windows": 20, #26, #number of windows
+    "audio_feedback": ["hear_metronome"],
+    "metronome_heuristic": ["average"]
 }
-
 
 if __name__ == "__main__":
 
