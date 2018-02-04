@@ -18,12 +18,14 @@
 
 import Tkinter
 from Tkinter import Tk, Label, Button, Entry, StringVar, Frame, OptionMenu, Text
-from tkMessageBox import showerror
+from tkMessageBox import showerror, askyesno
 from threading import Timer
 from datetime import date, datetime
 from copy import copy
 import numpy as np
+import time
 import os
+import re
 
 from GEMIO import GEMDataFile, GEMAcquisition
 from GEMITC import ITC
@@ -33,6 +35,12 @@ def get_date():
 
 def get_time():
     return datetime.now().strftime("%H:%M:%S")
+
+def hours_since_trump():
+    now = time.time()
+    now_hr = now - np.fmod(now, 60**2)
+    now_str = "%06d" % int((now_hr - 1484910000) / (60**2))
+    return now_str
 
 # ==============================================================================
 # Class of general utilities for constructing core aspects of GUI components
@@ -163,7 +171,9 @@ class DataViewer(GEMGUIComponent):
         self.set_title("Data Viewer")
 
         dv = Text(self, height=20, width=45, borderwidth=2)
-        dv.insert(Tkinter.INSERT, "Hello!\n\nData from Arduino will appear here\n")
+        dv.insert(Tkinter.INSERT,
+        "Hello!\n\nSubject id format:\n{} followed by the subject's initials and a digit if needed.\n\nData will appear here...".format(parent.hst)
+        )
         dv['state'] = 'disabled'
         self.add_row("dv", dv)
 
@@ -381,9 +391,11 @@ class BasicInfo(GEMGUIComponent):
         # Text box to enter experimenter initials
         self.add_row("experimenter", TextBoxGroup(self, "Experimenter ID:", 9))
 
+        hrs = hours_since_trump()
+
         for k in range(0, nsubj):
             id = str(k+1)
-            self.add_row("subjid-" + id, TextBoxGroup(self, "Subject " + id + " ID:", 12))
+            self.add_row("subjid-" + id, TextBoxGroup(self, "Subject " + id + " ID:", 12, hrs))
 
         self.nsubj = nsubj
 
@@ -408,6 +420,8 @@ class GEMGUI(Frame):
     def __init__(self, presets):
         self.root = Tk()
         Frame.__init__(self, self.root)
+
+        self.hst = hours_since_trump()
 
         self.presets = presets
         self.presets["run_duration"] = self["windows"] / self["metronome_tempo"] * 60.0
