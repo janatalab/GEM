@@ -237,6 +237,7 @@ class ExperimentControl(GEMGUIComponent):
             "Number of Runs Remaining:", 3))
 
         self["runsleft"].set_text(str(self.nruns))
+        self["runsleft"].disable()
         self.counter = self.nruns
 
         self.time_remaining = 0
@@ -357,6 +358,9 @@ class ExperimentControl(GEMGUIComponent):
         self.clean_up()
         self.counter -= 1
         self["runsleft"].set_text(str(self.counter))
+
+        if self.counter < 1:
+            self["ss"].disable("Start")
 
     # --------------------------------------------------------------------------
     def format_time(self, t):
@@ -514,6 +518,10 @@ class GEMGUI(Frame):
         filepath = os.path.join(data_dir, self["filename"] + "-" +
             "_".join(d["subject_ids"]) + ".gdf")
 
+        if os.path.exists(filepath):
+            if not askyesno("Overwrite file", "The data file already exists, overwrite?"):
+                return ""
+
         nruns = len(self.alphas)
 
         #TODO add conditional about this path already existing (in GEMIO?)
@@ -524,8 +532,3 @@ class GEMGUI(Frame):
 
 
 # ==============================================================================
-# if __name__ == "__main__":
-#     g = GEMGUI()
-#     g.mainloop()
-
-#print("You entered \"%s\"" % g.basic_info["experimenter"].get_text())
