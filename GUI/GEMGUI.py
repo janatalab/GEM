@@ -241,11 +241,24 @@ class ExperimentControl(GEMGUIComponent):
             showerror("Missing Experimenter ID", "Please enter an experimenter ID")
             return False
 
+        pat = re.compile(r"^\d{6}[a-z]{2,3}\d?$")
+
         ids = self.parent.basic_info.get_subjids()
+        k = 1
         for id in ids:
             if not id:
                 showerror("Missing Subject ID", "Please enter an ID for all subjects")
                 return False
+
+            if pat.match(id) is None:
+                hst = self.parent.hst
+                bi = self.parent.basic_info
+                bi["subjid-" + str(k)].set_text(hst)
+
+                showerror("Invalid Subject ID", "Please append the subject's initials to the number: '" + hst + "'")
+                return False
+
+            k += 1
 
         return True
 
