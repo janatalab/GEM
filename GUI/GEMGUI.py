@@ -268,14 +268,20 @@ class ExperimentControl(GEMGUIComponent):
         if not self.check_user_input():
             return
 
-        # disable start button
-        self["ss"].disable("Start")
-
         # if this is the first run, init the data file and write the file header
         if self.counter == self.nruns:
             data_file = self.parent.init_data_file()
+            if isinstance(data_file, str):
+                return
+
+            # first run, disable editing of text boxes
+            self.parent.basic_info.disable();
+
         else:
             data_file = self.parent.data_file
+
+        # disable start button
+        self["ss"].disable("Start")
 
         # Get current run number
         krun = self.nruns - self.counter
