@@ -15,8 +15,6 @@ Repository link: https://github.com/janatalab/GEM
 '''
 
 from GEMGUI import GEMGUI
-import serial
-from time import time
 import os
 
 rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
