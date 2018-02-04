@@ -397,6 +397,10 @@ class BasicInfo(GEMGUIComponent):
     def get_experimenter(self):
         return self["experimenter"].get_text()
 
+    def disable(self):
+        for k in range(0, self.nsubj):
+            self["subjid-" + str(k+1)].disable()
+        self["experimenter"].disable()
 # ==============================================================================
 # Build Main GUI
 # ==============================================================================
