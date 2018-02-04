@@ -20,8 +20,8 @@ import os
 rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
 
 presets = {
-    "serial": {"port": "/dev/cu.usbmodem1441111", "baud_rate": 115200, "timeout": 5},
-    "filename": "GEM_1playerPilot_",
+    "serial": {"port": "/dev/cu.usbmodem1451111", "baud_rate": 115200, "timeout": 5},
+    "filename": "GEM_1playerPilot",
     "data_dir": "/Users/janatalab/Documents/Arduino/Data", #TODO: change on lab computer
     "hfile": rootpath + "GEM/GEM/GEMConstants.h",
     "slaves_requested": 1,

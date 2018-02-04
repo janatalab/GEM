@@ -20,7 +20,7 @@ rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
 
 presets = {
     "serial": {"port": "/dev/cu.usbmodem1441111", "baud_rate": 115200, "timeout": 5},
-    "filename": "GEM_4playerData_",
+    "filename": "GEM_4playerData",
     "data_dir": "/Users/janatalab/Documents/Arduino/Data",
     "hfile": rootpath + "GEM/GEM/GEMConstants.h",
     "slaves_requested": 4,
