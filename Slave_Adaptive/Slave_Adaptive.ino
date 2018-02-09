@@ -23,15 +23,15 @@
 #include <GEMreport.h>
 
 ////////// DEFINES //////////
-// Set the address for this slave. 
+// Set the address for this slave.
 // This needs to be unique to each tapper (slave), and must therefore
 // be changed as each sketch is compiled and uploaded to each slave device
-#define ADDRESS 4
+#define ADDRESS 3
 
 
 
 // put error messages in flash memory
-// 18Mar2017 PJ - we're going to send error codes to the Experiment Control Computer (ECC) 
+// 18Mar2017 PJ - we're going to send error codes to the Experiment Control Computer (ECC)
 // on the fly, so there is no need to store messages in flash memory.
 // We should create a GEMError class that defines all of the constants
 //#define error(msg) error_P(PSTR(msg))
@@ -39,7 +39,7 @@
 /////////////////////////////////
 
 ////////////// INITIALIZE GLOBAL VARIABLES  //////////////
-// 18Mar2017 PJ - ultimately, the following parameters should be passed in 
+// 18Mar2017 PJ - ultimately, the following parameters should be passed in
 //                via the Master during initialization:
 //  PLAY_TIME - how long should a song play for
 //  FSRThresh - the FSR value that should be exceeded in order to register a tap (important for preventing double taps)
@@ -57,14 +57,14 @@ uint8_t FSRpin = 0;
 uint8_t sendPin = 6;
 
 
-// the FSR value that should be exceeded in order to register a tap 
+// the FSR value that should be exceeded in order to register a tap
 // 20 in Schultz and van Vogt, 10 for more sensitivity
-int FSRThresh = 30; 
+int FSRThresh = 30;
 
 // Timing parameters
 uint32_t currTime; // stores time at which the FSR exceeds threshold
 uint32_t prevInterruptTime; // stores the time that the last interupt was fired
-uint8_t minITI = 50; // the minimum amount of time between the currentTime and prevInterruptTime 
+uint8_t minITI = 50; // the minimum amount of time between the currentTime and prevInterruptTime
                  // must have elapsed before another interrupt is fired
 
 //////// OBJECTS FROM THE WAVEHC LIBRARY: ////////
@@ -106,7 +106,7 @@ void setup() {
 
   // Initialize the sound card
   sound.setupSDCard();
-  
+
   // Load a sound file
   if (DEBUG) report.infostr("Loading sound file");
   sound.loadByName(soundName);
@@ -126,7 +126,7 @@ void loop() {
     currVal = analogRead(FSRpin);
 
     // if the value exceeds the designated threshold
-    if (currVal >= FSRThresh) {      
+    if (currVal >= FSRThresh) {
       // Get the current time
       currTime = millis();
 
@@ -159,7 +159,7 @@ void loop() {
       // If the value of the FSR returns to zero, declare the tap completely done,
       // thus enabling a new tap and associated sound
       if (!tapDone){
-        if (DEBUG) Serial.println("");       
+        if (DEBUG) Serial.println("");
       }
       tapDone = true;
     } // end if (val >= FSRThresh)
@@ -177,20 +177,20 @@ void loop() {
 // receiveEvent is passed to Wire.onReceive() as an argument
 void receiveEvent(int howMany){
   int requestCode;
-  
+
   // Figure out what we need to do based on the message identifier code
   if (DEBUG) Serial.println("Received Wire msg");
-  
+
   requestCode = Wire.read();
   switch (requestCode)
   {
     case GEM_REQUEST_ACK:
       // Turn around the handshake request by pulsing the digital pin
       if (DEBUG) Serial.println("Performing handshake");
-      
+
       digitalWrite(sendPin, HIGH);
       delay(GEM_WRITE_DUR_MS);
-      
+
       // revert pin to 0V
       digitalWrite(sendPin, LOW);
       break;
