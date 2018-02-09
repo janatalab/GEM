@@ -8,9 +8,9 @@ import os
 rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
 
 presets = {
-    "serial": {"port": "/dev/cu.usbmodem1451111", "baud_rate": 115200, "timeout": 5},
+    "serial": {"port": "/dev/cu.usbmodem14511", "baud_rate": 115200, "timeout": 5},
     "filename": "throughput",
-    "data_dir": rootpath + "Data/", #TODO: change on lab computer
+    "data_dir": rootpath + "Data/", 
     "hfile": rootpath + "GEM/GEM/GEMConstants.h",
     "slaves_requested": 1,
     "metronome_alpha": [0],
