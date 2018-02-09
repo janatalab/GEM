@@ -22,13 +22,13 @@ rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
 presets = {
     "serial": {"port": "/dev/cu.usbmodem14511", "baud_rate": 115200, "timeout": 5},
     "filename": "GEM_1playerPilot",
-    "data_dir": rootpath + "Data/", 
+    "data_dir": rootpath + "Data/",
     "hfile": rootpath + "GEM/GEM/GEMConstants.h",
     "slaves_requested": 1,
     "metronome_alpha": [0, 0.25, 0.5, 0.75, 1],
     "metronome_tempo": 120.0, #units: beats-per-minute
-    "repeats": 1,#10, #fairhurst was 12
-    "windows": 20, #26, #number of windows
+    "repeats": 10, #10, #fairhurst was 12
+    "windows": 26, #26, #number of metronome clicks
     "audio_feedback": ["hear_metronome"],
     "metronome_heuristic": ["average"]
 }
