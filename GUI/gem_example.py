@@ -4,13 +4,24 @@ Presets for use in debugging.
 
 from GEMGUI import GEMGUI
 import os
+import serial.tools.list_ports
+
+def get_master_port():
+    ports = list(serial.tools.list_ports.comports())
+    for p in ports:
+        # Check for ID of usb adapter we use to connect Arduino
+        if "Generic CDC" in p[1]:
+            pid = str(p)
+            return pid.split(' ')[0]
+
+master_port = get_master_port()
 
 rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
 
 presets = {
-    "serial": {"port": "/dev/cu.usbmodem14511", "baud_rate": 115200, "timeout": 5},
+    "serial": {"port": master_port, "baud_rate": 115200, "timeout": 5},
     "filename": "throughput",
-    "data_dir": rootpath + "Data/", 
+    "data_dir": rootpath + "Data/",
     "hfile": rootpath + "GEM/GEM/GEMConstants.h",
     "slaves_requested": 1,
     "metronome_alpha": [0],
