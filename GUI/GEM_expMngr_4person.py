@@ -38,7 +38,7 @@ presets = {
     "metronome_alpha": [0, 0.4, 1],
     "metronome_tempo": 120.0, #units: beats-per-minute
     "repeats": 5,
-    "windows": 120, #number of windows # TODO wants 1 min rounds then short pause
+    "windows": 120, # Want 1 min rounds then short pause
     "audio_feedback": ["hear_metronome"],
     "metronome_heuristic": ["average"]
 }

@@ -21,7 +21,7 @@ rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
 presets = {
     "serial": {"port": master_port, "baud_rate": 115200, "timeout": 5},
     "filename": "throughput",
-    "data_dir": rootpath + "Data/",
+    "data_dir": rootpath + "GEM/Data/",
     "hfile": rootpath + "GEM/GEM/GEMConstants.h",
     "slaves_requested": 1,
     "metronome_alpha": [0],
