@@ -216,6 +216,8 @@ class GEMAcquisition(Thread):
         self.serial_ifo = presets["serial"]
         self.run_duration = presets["run_duration"]
 
+        self.windows = presets["windows"]
+
         self.tempo = self.constants["GEM_METRONOME_TEMPO"] + str(int(presets["metronome_tempo"]))
 
         self.alpha = self.constants["GEM_METRONOME_ALPHA"] + str(alpha)
@@ -250,10 +252,11 @@ class GEMAcquisition(Thread):
 
             # track bytes received for debugging
             total = 0
+            expected = self.constants["GEM_PACKET_SIZE"] * self.windows
 
             tstart = time()
             done = self.itc.check_done()
-            while (not done) and (time() < (tstart + self.run_duration)):
+            while (not done) and (total < expected):
 
                 n = io.available()
                 if n > 0:

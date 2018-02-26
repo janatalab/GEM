@@ -49,7 +49,7 @@ presets = {
     "slaves_requested": 1,
 
     # metronome adaptivity levels to be used
-    "metronome_alpha": [0, .5, 1],
+    "metronome_alpha": [1, 1],
 
     # tempo of the metronome; unit: beats-per-minute
     "metronome_tempo": 120.0,
@@ -58,7 +58,7 @@ presets = {
     "repeats": 1,
 
     # number of metronome clicks
-    "windows": 20,
+    "windows": 26,
 
     # audio feedback condition; NB: at present, only "hear_metronome" available.
     # Future releases will allow for all variations on hearing self, metronome,

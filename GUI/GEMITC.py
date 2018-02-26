@@ -50,7 +50,7 @@ class ITC(Thread):
                 # if <to> has a registered queue add the msg to the queue
                 if self.signal in self.listeners:
                     for receiver in self.listeners[self.signal]:
-                        print("sending signal: %s, msg: %s" % (self.signal, str(self.buffer)))
+                        # print("sending signal: %s, msg: %s" % (self.signal, str(self.buffer)))
                         receiver(self.buffer)
 
                 self.listener_lock.release()
@@ -96,7 +96,7 @@ class ITC(Thread):
     # send a message to all entities that have registered with the name <to>
     def send_message(self, to, msg=""):
         self.cv.acquire()
-        print("buffering signal: %s, msg: %s " % (to, str(msg)))
+        # print("buffering signal: %s, msg: %s " % (to, str(msg)))
         self.signal = to
         self.buffer = msg
         self.cv.notify()
