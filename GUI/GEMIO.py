@@ -252,7 +252,7 @@ class GEMAcquisition(Thread):
 
             # track bytes received for debugging
             total = 0
-            expected = self.constants["GEM_PACKET_SIZE"] * self.windows
+            expected = 17 * self.windows #self.constants["GEM_PACKET_SIZE"] * self.windows
 
             tstart = time()
             done = self.itc.check_done()
