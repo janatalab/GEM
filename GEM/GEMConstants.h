@@ -98,6 +98,9 @@ Miscellaneous constants for which the value is non-arbitrary. These are written
 as ints to indicate this, but often are used in a single-byte context...
 ----------------------------------------------------------------------------- */
 
+//packet size
+#define GEM_PACKET_SIZE 17
+
 //Slave-related constants
 #define GEM_MAX_SLAVES 4
 #define NO_RESPONSE   -32000
