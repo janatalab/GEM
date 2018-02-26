@@ -109,7 +109,8 @@ function read_run_header(file::GEMDataFile, k::Integer=1)
         open(file.path, "r") do io
             seek(io, offset)
             hdr_length = read(io, UInt64)
-            return JSON.parse(String(read(io, UInt8, hdr_length))), position(io)
+            hdr = JSON.parse(String(read(io, UInt8, hdr_length)))
+            return hdr, position(io)
         end
     else
         return Dict(), -1
