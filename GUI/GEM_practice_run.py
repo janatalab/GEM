@@ -55,7 +55,7 @@ presets = {
     "metronome_tempo": 120.0,
 
     # number of repetitions for each alpha value
-    "repeats": 1,
+    "repeats": 3,
 
     # number of metronome clicks
     "windows": 26,
