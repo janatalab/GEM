@@ -1,8 +1,8 @@
 module GEMDataReader
 
 import JSON
-
-export convert_file, GEMDataFile, read_run
+using FileOps
+export convert_file, convert_files, GEMDataFile, read_run
 
 const MAX_SLAVES = 0x04
 # ---------------------------------------------------------------------------- #
@@ -34,6 +34,58 @@ function GEMDataFile(filepath::String)
     end
 end
 # ---------------------------------------------------------------------------- #
+function swapext(file::String, ext::String)
+    ext = ext[1] == "." ? ext : "." * ext
+    return splitext(file)[1] * ext
+end
+# ---------------------------------------------------------------------------- #
+"""
+    ofiles = convert_files(dir::String, force::Bool=false, depth::Integer=1)
+
+# In:
+- `dir::String`: the path to a base directory to search within
+- `force::Bool`: true to force reconversion of gdf files where the resulting csv file already exists
+- `depth::Integer`: the depth of sub-directories to search
+
+# Out:
+- `ofiles::Vector{String}`: resulting csv files paths (successful conversions only)
+
+# Examples:
+
+```julia
+ofiles = convert_files("../Data/")
+```
+"""
+function convert_files(dir::String, force::Bool=false, depth::Integer=1)
+    dirs = find_directories(dir, r"\d{8}")
+    for k in eachindex(dirs)
+        for j in 1:depth-1
+            # only folders named as yyyymmdd
+            append!(dirs, find_directories(dirs[j], r"\d{8}"))
+        end
+    end
+
+    files = Vector{String}()
+    for dir in dirs
+        append!(files, find_files(dir, r"\.gdf$"))
+    end
+
+    ofiles = Vector{String}()
+
+    for k in eachindex(files)
+        ofile = swapext(files[k], "csv")
+        if !isfile(ofile) || force
+            try
+                convert_file(files[k], ofile)
+                push!(ofiles, ofile)
+            catch err
+                warn("Failed to convert file: \"$(files[k])\" - $(err)")
+            end
+        end
+    end
+    return ofiles
+end
+# ---------------------------------------------------------------------------- #
 function convert_file(ifile::String, ofile::String)
 
     df = GEMDataFile(ifile)
@@ -59,8 +111,7 @@ function convert_file(ifile::String, ofile::String)
         df.hdr["run_headers"] = hdrs
     end
 
-    jfile = splitext(ofile)[1] * ".json"
-    open(jfile, "w") do io
+    open(swapext(ofile, "json"), "w") do io
         write(io, JSON.json(df.hdr))
     end
 
