@@ -39,7 +39,7 @@ presets = {
     "filename": "GEM_practice",
 
     # directory for output data
-    "data_dir": rootpath + "GEM/Data/",
+    "data_dir": "/Users/" + os.environ['USER'] +        "/Desktop/GEM_data/1person_GEM_pilotData/",
 
     # path to GEMConstants.h
     "hfile": rootpath + "GEM/GEM/GEMConstants.h",

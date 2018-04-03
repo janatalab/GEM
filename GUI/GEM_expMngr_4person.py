@@ -32,7 +32,7 @@ rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
 presets = {
     "serial": {"port": master_port, "baud_rate": 115200, "timeout": 5},
     "filename": "GEM_4playerData",
-    "data_dir": rootpath + "GEM/Data/",
+    "data_dir": "/Users/" + os.environ['USER'] +        "/Desktop/GEM_data/4person_GEM_pilotData/",
     "hfile": rootpath + "GEM/GEM/GEMConstants.h",
     "slaves_requested": 4,
     "metronome_alpha": [0, 0.4, 1],
