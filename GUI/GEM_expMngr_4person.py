@@ -35,7 +35,7 @@ presets = {
     "data_dir": "/Users/" + os.environ['USER'] +        "/Desktop/GEM_data/4person_GEM_pilotData/",
     "hfile": rootpath + "GEM/GEM/GEMConstants.h",
     "slaves_requested": 4,
-    "metronome_alpha": [0, 0.4, 1],
+    "metronome_alpha": [0, 0.35, 0.7, 1],
     "metronome_tempo": 120.0, #units: beats-per-minute
     "repeats": 5,
     "windows": 120, # Want 1 min rounds then short pause
