@@ -6,7 +6,9 @@ findings of Fairhurst, Janata, and Keller (2012) to group settings.
 
     IV: alpha value
     DV: individual std asynchronies, group std asynchs, subjective ratings
-    Instruction: Listen to first 2 metronome tones and then synchronize
+    Instructions: Listen to first 2 metronome tones and then synchronize.
+    Try to maintain the initial tempo of the metronome.
+    Tap with index finger of dominant hand. Look at own index finger, not other players.
 
 Authors: Lauren Fink, Scottie Alexander, Petr Janata
 Contact: pjanata@ucdavis.edu
