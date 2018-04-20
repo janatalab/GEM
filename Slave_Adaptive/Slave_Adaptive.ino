@@ -59,7 +59,13 @@ uint8_t sendPin = 6;
 
 // the FSR value that should be exceeded in order to register a tap
 // 20 in Schultz and van Vogt, 10 for more sensitivity
-int FSRThresh = 30;
+int FSRThresh = 300;
+// each FSR is unique -- there is not a one-threshold-fits-all solution
+// LF - 20180419
+// Slave 1 FSR works well at 80
+// Slave 2 FSR works well at 15
+// Slave 3 FSR works well at 300
+// Slave 4 FSR works well at 530
 
 // Timing parameters
 uint32_t currTime; // stores time at which the FSR exceeds threshold
