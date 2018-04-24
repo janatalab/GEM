@@ -39,17 +39,16 @@ presets = {
     "filename": "GEM_example",
 
     # directory for output data
-    "data_dir": rootpath + "GEM/Data/",
+    "data_dir": "/Users/" + os.environ['USER'] +        "/Desktop/GEM_data/demo_data/",
 
     # path to GEMConstants.h
     "hfile": rootpath + "GEM/GEM/GEMConstants.h",
 
-    # number of players in the experiment. NB: all 4 slaves Arduinos can still
-    # be attached to master
-    "slaves_requested": 1,
+    # number of players in the experiment. NB: all 4 slaves Arduinos can still be attached to master
+    "slaves_requested": 4,
 
     # metronome adaptivity levels to be used
-    "metronome_alpha": [1, 1],
+    "metronome_alpha": [0, .25, .75, 1],
 
     # tempo of the metronome; unit: beats-per-minute
     "metronome_tempo": 120.0,
@@ -58,7 +57,7 @@ presets = {
     "repeats": 1,
 
     # number of metronome clicks
-    "windows": 26,
+    "windows": 50,
 
     # audio feedback condition; NB: at present, only "hear_metronome" available.
     # Future releases will allow for all variations on hearing self, metronome,
