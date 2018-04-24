@@ -39,14 +39,13 @@ presets = {
     "filename": "GEM_practice",
 
     # directory for output data
-    "data_dir": "/Users/" + os.environ['USER'] +        "/Desktop/GEM_data/1person_GEM_pilotData/",
+    "data_dir": "/Users/" + os.environ['USER'] +        "/Desktop/GEM_data/practice_runs/",
 
     # path to GEMConstants.h
     "hfile": rootpath + "GEM/GEM/GEMConstants.h",
 
-    # number of players in the experiment. NB: all 4 slaves Arduinos can still
-    # be attached to master
-    "slaves_requested": 1,
+    # number of players in the experiment. NB: all 4 slaves Arduinos can still be attached to master
+    "slaves_requested": 4,
 
     # metronome adaptivity levels to be used
     "metronome_alpha": 0,
