@@ -58,8 +58,11 @@ uint8_t sendPin = 6;
 
 
 // the FSR value that should be exceeded in order to register a tap
-// 20 in Schultz and van Vogt, 10 for more sensitivity
-int FSRThresh = 300;
+// 20 in Schultz and van Vogt
+int FSRThresh = 40; // per convo with Petr 20180424 - LF
+// Formerly all FSRs were at 30
+// Going to change back to 30 because seeing weird issues of phantom taps.. - LF 20180423
+
 // each FSR is unique -- there is not a one-threshold-fits-all solution
 // LF - 20180419
 // Slave 1 FSR works well at 80
