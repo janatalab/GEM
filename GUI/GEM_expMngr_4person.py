@@ -39,8 +39,8 @@ presets = {
     "slaves_requested": 4,
     "metronome_alpha": [0, 0.35, 0.7, 1],
     "metronome_tempo": 120.0, #units: beats-per-minute
-    "repeats": 5,
-    "windows": 120, # Want 1 min rounds then short pause
+    "repeats": 6,
+    "windows": 60, # ~30 sec rounds 
     "audio_feedback": ["hear_metronome"],
     "metronome_heuristic": ["average"]
 }
