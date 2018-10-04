@@ -59,7 +59,8 @@ uint8_t sendPin = 6;
 
 // the FSR value that should be exceeded in order to register a tap
 // 20 in Schultz and van Vogt
-int FSRThresh = 40; // per convo with Petr 20180424 - LF
+int FSRThresh = 300; // officially fixed this on 20181004 - LF + PJ + oscilloscope
+//int FSRThresh = 40; // per convo with Petr 20180424 - LF
 // Formerly all FSRs were at 30
 // Going to change back to 30 because seeing weird issues of phantom taps.. - LF 20180423
 
