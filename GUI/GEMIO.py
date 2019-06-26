@@ -221,6 +221,13 @@ class GEMAcquisition(Thread):
         self.tempo = self.constants["GEM_METRONOME_TEMPO"] + str(int(presets["metronome_tempo"]))
 
         self.alpha = self.constants["GEM_METRONOME_ALPHA"] + str(alpha)
+        
+        # add continuation related presets - LF 20190626
+        self.prompt_windows = self.constants["GEM_METRONOME_PROMPT_WINDOWS"] + str(presets["metronome_prompt_windows"])
+        
+        self.stop_window = self.constants["GEM_METRONOME_STOP_WINDOW"] + str(presets["metronome_stop_window"])
+        
+        self.continuation = self.constants["GEM_METRONOME_CONTINUATION"] + str(presets["metronome_continuation"])
 
     # override Thread.run()
     def run(self):
