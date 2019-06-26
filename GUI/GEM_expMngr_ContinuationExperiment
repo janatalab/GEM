@@ -17,15 +17,18 @@ rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
 presets = {
     "serial": {"port": master_port, "baud_rate": 115200, "timeout": 5},
     "filename": "GEM_Continuation",
-    "data_dir": "/Users/" + os.environ['USER'] +        "/Desktop/GEM_data/Continuation/",
+    "data_dir": "/Users/" + os.environ['USER'] +        "/Desktop/GEM_data/Continuation/Experiment",
     "hfile": rootpath + "GEM/GEM/GEMConstants.h",
     "slaves_requested": 4,
-    "metronome_alpha": [0],
+    "metronome_alpha": 0,
     "metronome_tempo": 120.0, #units: beats-per-minute
     "repeats": 12,
     "windows": 120, # ~60 sec rounds
     "audio_feedback": ["hear_all"],
-    "metronome_heuristic": ["average"]
+    "metronome_heuristic": ["average"],
+    "metronome_continuation": 1, # add boolean that we pass to GEMIO and ultimately master
+    "metronome_prompt_beats": 4, # number of prompt beats before metronome stops playing sound
+    "metronome_stop_window": 120 # window on which to play stop cue
 }
 
 if __name__ == "__main__":
