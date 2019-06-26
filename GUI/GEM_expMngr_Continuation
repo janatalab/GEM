@@ -32,9 +32,3 @@ if __name__ == "__main__":
 
     g = GEMGUI(presets)
     g.mainloop()
-
-def mute_metronome():
-    ??????
-    
-t = Timer(2.0, mute_metronome)
-t.start() # after 2 seconds or 2 beats, the metronome will mute
