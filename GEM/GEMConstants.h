@@ -65,6 +65,9 @@ Metronome related constants (0x1* = 16 - 31)
 #define GEM_METRONOME_HEURISTIC_AVERAGE 0x10  //16
 #define GEM_METRONOME_ALPHA             0x11  //17
 #define GEM_METRONOME_TEMPO             0x12  //18
+#define GEM_METRONOME_CONTINUATION      0x13 // add constants for continuation paradigm - LF 20190626
+#define GEM_METRONOME_PROMPT_WINDOWS    0x14
+#define GEM_METRONOME_STOP_WINDOW       0x15
 
 /* -----------------------------------------------------------------------------
 Error handling related constants (0x2* = 32 - 47)
