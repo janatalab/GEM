@@ -530,8 +530,23 @@ void run()
 #ifdef DEBUG
             Serial.println("SND");
 #endif
-            sound.play(); // play the sound
-
+          
+          // set up logic for continuation task - LF 20190626
+          
+          // check if we want continuation paradigm
+          if met.continuation
+            // check if we have passed desired number of prompt beats. If not, play sound. If yes, don't
+            if (window < met.prompt_beats) // allow us to set this dynamically from ECC 
+            {
+              sound.play(); // play the sound
+            }
+          // if we are not in the continuation paradigm, play the sounds as usual
+          else
+          {
+            sound.play(); 
+          }
+            
+            // set this flag to true, regardless of whether actually play sound, because there is no need to mess with this logic
             met.played = true; // flag that it has been played
 
 #ifdef DEBUG
