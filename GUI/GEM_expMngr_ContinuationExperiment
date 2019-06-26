@@ -27,7 +27,7 @@ presets = {
     "audio_feedback": ["hear_all"],
     "metronome_heuristic": ["average"],
     "metronome_continuation": 1, # add boolean that we pass to GEMIO and ultimately master
-    "metronome_prompt_beats": 4, # number of prompt beats before metronome stops playing sound
+    "metronome_prompt_windows": 4, # number of prompt beats before metronome stops playing sound
     "metronome_stop_window": 120 # window on which to play stop cue
 }
 
