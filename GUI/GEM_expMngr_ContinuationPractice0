@@ -1,0 +1,38 @@
+from GEMGUI import GEMGUI
+import os
+import serial.tools.list_ports
+
+def get_master_port():
+    ports = list(serial.tools.list_ports.comports())
+    for p in ports:
+        # Check for ID of usb adapter we use to connect Arduino
+        if "Generic CDC" in p[1]:
+            pid = str(p)
+            return pid.split(' ')[0]
+
+master_port = get_master_port()
+
+rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
+
+presets = {
+    "serial": {"port": master_port, "baud_rate": 115200, "timeout": 5},
+    "filename": "GEM_Continuation",
+    "data_dir": "/Users/" + os.environ['USER'] +        "/Desktop/GEM_data/Continuation/Experiment",
+    "hfile": rootpath + "GEM/GEM/GEMConstants.h",
+    "slaves_requested": 4,
+    "metronome_alpha": 0,
+    "metronome_tempo": 120.0, #units: beats-per-minute
+    "repeats": 12,
+    "windows": 120, # ~60 sec rounds
+    "audio_feedback": ["hear_all"],
+    "metronome_heuristic": ["average"],
+    "metronome_continuation": 0, # add boolean that we pass to GEMIO and ultimately master
+    # the parameters below don't matter. but the IO file is expecting them. So leave them.
+    "metronome_prompt_windows": 4, # number of prompt beats before metronome stops playing sound
+    "metronome_stop_window": 120 # window on which to play stop cue
+}
+
+if __name__ == "__main__":
+
+    g = GEMGUI(presets)
+    g.mainloop()
