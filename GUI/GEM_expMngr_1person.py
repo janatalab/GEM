@@ -3,10 +3,10 @@ Presets for use in single player GEM pilot experiment.
 
 This experiment involves solo tapper with adaptive metronome to make
 sure that we can replicate the single-tapper results of Fairhurst, Janata, and
-Keller, 2012, with the GEM system.
+Keller (2013) with the GEM system.
 
     IV: alpha value
-    DV: std asynchrony; sunjective ratings
+    DV: std asynchrony; subjective ratings
     Instructions: Listen to first 2 metronome tones and then synchronize
 
 Authors: Lauren Fink, Scottie Alexander, Petr Janata
