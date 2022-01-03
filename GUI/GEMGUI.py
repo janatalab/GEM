@@ -16,9 +16,9 @@
 # --- this should wait until v2
 '''
 
-import Tkinter
-from Tkinter import Tk, Label, Button, Entry, StringVar, Frame, OptionMenu, Text
-from tkMessageBox import showerror, askyesno
+import tkinter
+from tkinter import Tk, Label, Button, Entry, StringVar, Frame, OptionMenu, Text
+from tkinter.messagebox import showerror, askyesno
 from threading import Timer
 from datetime import date, datetime
 from copy import copy
@@ -26,6 +26,9 @@ import numpy as np
 import time
 import os
 import re
+import requests
+
+import pdb
 
 from GEMIO import GEMDataFile, GEMAcquisition
 from GEMITC import ITC
@@ -66,7 +69,7 @@ class GEMGUIComponent(Frame):
             col = 0
             for (item, tag) in zip(items, tags):
                 self.components[tag] = item
-                item.grid(row=self.krow, column=col, pady = 3, sticky="NW")
+                item.grid(row=self.krow+1, column=col, pady = 3, sticky="NW")
                 col += 1
 
             self.krow += 1
@@ -115,11 +118,11 @@ class TextBoxGroup(Frame):
         self.resp.set(txt)
 
     def disable(self):
-        #self.entry["state"] = Tkinter.DISABLED
+        #self.entry["state"] = tkinter.DISABLED
         self.entry["state"] = "readonly"
 
     def enable(self):
-        self.entry["state"] = Tkinter.NORMAL
+        self.entry["state"] = tkinter.NORMAL
 
 # ==============================================================================
 # class to create text (left) and button (right)
@@ -153,11 +156,11 @@ class ButtonGroup(Frame):
 
     def disable(self, label):
         if label in self.labels:
-            self.change_state(self.labels.index(label), Tkinter.DISABLED)
+            self.change_state(self.labels.index(label), tkinter.DISABLED)
 
     def enable(self, label):
         if label in self.labels:
-            self.change_state(self.labels.index(label), Tkinter.NORMAL)
+            self.change_state(self.labels.index(label), tkinter.NORMAL)
 
     def change_state(self, k, state):
         self.btn[k]["state"] = state
@@ -171,7 +174,7 @@ class DataViewer(GEMGUIComponent):
         self.set_title("Data Viewer")
 
         dv = Text(self, height=20, width=45, borderwidth=2)
-        dv.insert(Tkinter.INSERT,
+        dv.insert(tkinter.INSERT,
         "Hello!\n\nSubject id format:\n{} followed by the subject's initials and a digit if needed.\n\nData will appear here...".format(parent.hst)
         )
         dv['state'] = 'disabled'
@@ -191,7 +194,7 @@ class DataViewer(GEMGUIComponent):
     def draw(self):
         # delete what is in data viewer now
         self["dv"]["state"] = "normal"
-        self["dv"].delete(1.0, Tkinter.END)
+        self["dv"].delete(1.0, tkinter.END)
 
         # write to data viewer
         self["dv"].insert("end", self.buffer)
@@ -389,7 +392,7 @@ class BasicInfo(GEMGUIComponent):
     def __init__(self, parent, nsubj):
         GEMGUIComponent.__init__(self, parent, 1)
 
-        # Heading for this componenet of GUI
+        # Heading for this component of GUI
         self.set_title("Basic Information")
 
         # Text box to enter experimenter initials
@@ -397,11 +400,12 @@ class BasicInfo(GEMGUIComponent):
 
         hrs = hours_since_trump()
 
-        for k in range(0, nsubj):
-            id = str(k+1)
-            self.add_row("subjid-" + id, TextBoxGroup(self, "Subject " + id + " ID:", 12, hrs))
+        if not parent.presets["connect_pyensemble"]:
+            for k in range(0, nsubj):
+                id = str(k+1)
+                self.add_row("subjid-" + id, TextBoxGroup(self, "Subject " + id + " ID:", 12, hrs))
 
-        self.nsubj = nsubj
+                self.nsubj = nsubj
 
     def get_subjids(self):
         ids = list()
@@ -417,6 +421,153 @@ class BasicInfo(GEMGUIComponent):
         for k in range(0, self.nsubj):
             self["subjid-" + str(k+1)].disable()
         self["experimenter"].disable()
+
+
+# ==============================================================================
+# Class for controlling experiment and receiving data
+class GroupSession(GEMGUIComponent):
+    def __init__(self, parent):
+        GEMGUIComponent.__init__(self, parent, 1)
+        self.parent = parent
+
+        # Heading for this component of GUI
+        self.set_title("PyEnsemble Group Session")
+
+        # Define PyEnsemble endpoints
+        self.pyensemble = {
+            "connect_url": "/group/session/attach/experimenter/",
+            "update_url": "/group/session/participants/get/",
+        }
+
+        # Text box to enter the server URL
+        self.add_row("server", TextBoxGroup(self, "Server:", 36))
+        self["server"].set_text(self.parent["pyensemble_server"])
+        self.add_row("username", TextBoxGroup(self, "User:", 15))
+        self.add_row("password", TextBoxGroup(self, "Password", 15))
+        self.components["password"].entry["show"] = '*'
+
+        # Text box to enter the experimenter code
+        self.add_row("experimenter_code", TextBoxGroup(self, "Experimenter Code:", 4))
+
+        # Text box to enter the session status
+        # status = Text(self, height=1, width=20, borderwidth=2)
+        # self.add_row("status", status)
+
+        # Buttons
+        self.add_row("buttons", ButtonGroup(self, {"Connect": self.connect_server, "Update": self.update}, 40))
+
+        # Add participant list viewer
+        dv = Text(self, height=6, width=45, borderwidth=2)
+        dv.insert(tkinter.INSERT, "Participants:\n")
+        dv['state'] = 'disabled'
+        self.add_row("dv", dv)
+
+
+    # Bind this session to the server
+    def connect_server(self):
+        success = False
+
+        # Get the requisite inputs
+        server = self["server"].get_text()
+        if not server:
+            showerror("Missing PyEnsemble Server", "Please enter a PyEnsemble server")
+            return
+
+        username = self["username"].get_text()
+        if not username:
+            showerror("Missing username", "Please enter a PyEnsemble username")
+            return
+
+        password = self["password"].get_text()
+        if not password:
+            showerror("Missing password", "Please enter a PyEnsemble password")
+            return
+
+        # Initialize a session object
+        s = requests.Session()
+
+        # Cache the session object
+        self.pyensemble["session"] = s
+
+        # Construct the server URL
+        url = server + self.pyensemble["connect_url"]
+
+        # Access the URL
+        resp = s.get(url)
+
+        # Check whether it is a login form
+        p = re.compile('name="username"')
+        match = p.search(resp.text)
+
+        if match:
+            # Login and redirect to the target url
+            resp = s.post(resp.url, {
+                'username': username, 
+                'password': password, 
+                'csrfmiddlewaretoken': s.cookies['csrftoken']
+                })
+
+        # Check whether we are being prompted for the experimenter code
+        p = re.compile('name="experimenter_code"')
+        match = p.search(resp.text)
+
+        if match:
+            # Get the experimenter code from our value field
+            experimenter_code = self["experimenter_code"].get_text()
+
+            if not experimenter_code:
+                showerror("Missing Session Experimenter Code", "Please enter a session experimenter code")
+                return
+
+            # Connect to the group session
+            resp = s.post(url, {
+                'experimenter_code': experimenter_code, 
+                'csrfmiddlewaretoken': s.cookies['csrftoken']
+                })
+
+            # Check for success
+            if resp.status_code == 200:
+                # Check to see whether we redirected to the status page
+                p = re.compile('id="groupsession_status"')
+                if p.search(resp.text):
+                    success = True
+
+        # Update our participant list if connection was successful
+        if success:
+            self.update()
+
+
+    # Update our bound participant list
+    def update(self):
+        url = self["server"].get_text()+self.pyensemble["update_url"]
+        
+        resp = self.pyensemble["session"].get(url)
+
+        # Extract our participant info
+        pinfo = resp.json()
+
+        msg = "Participants:\n"
+        for k, v in pinfo.items():
+            msg += f"{k}: {v['first']} {v['last']}\n"
+
+        # delete what is in data viewer now
+        self["dv"]["state"] = "normal"
+        self["dv"].delete(1.0, tkinter.END)
+
+        # write to data viewer
+        self["dv"].insert("end", msg)
+        self["dv"]["state"] = "disabled"
+
+        participants = pinfo.keys()
+        for idx, p in enumerate(participants):
+            id = idx+1
+            self.parent.basic_info.add_row("subjid-" + str(id), TextBoxGroup(self.parent.basic_info, "Subject " + str(id) + " ID:", 12))
+
+        self.parent.basic_info.nsubj = id    
+
+
+        
+
 # ==============================================================================
 # Build Main GUI
 # ==============================================================================
@@ -441,6 +592,8 @@ class GEMGUI(Frame):
 
         # Add relevant modules
         self.basic_info = BasicInfo(self, self.presets["slaves_requested"])
+        if self.presets["connect_pyensemble"]:
+            self.pyensemble = GroupSession(self)
         self.exp_control = ExperimentControl(self)
         self.data_viewer = DataViewer(self)
 
@@ -529,6 +682,5 @@ class GEMGUI(Frame):
         self.data_file.write_file_header(d, nruns)
 
         return self.data_file
-
 
 # ==============================================================================
