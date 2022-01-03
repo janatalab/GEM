@@ -1,2 +1,7 @@
-numpy==1.13.0
-pyserial==3.3
+certifi==2021.10.8
+charset-normalizer==2.0.9
+idna==3.3
+numpy==1.21.5
+pyserial==3.5
+requests==2.26.0
+urllib3==1.26.7
