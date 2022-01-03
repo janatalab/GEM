@@ -7,33 +7,24 @@ Repository link: https://github.com/janatalab/GEM
 '''
 
 from GEMGUI import GEMGUI
-import os
-import serial.tools.list_ports
+from GEMIO import get_master_port
+import sys, os, re
 
-# Define path to Arduino directory
-rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
+# Deal with adding the requisite GEM GUI modules to the path
+if not os.environ.get('GEMROOT', None):
+    # Try to get the GEM path from this module's path.
+    p = re.compile('.*/GEM/')
+    m = p.match(os.path.join(os.path.abspath(os.path.curdir), __file__))
+    if m:
+        os.environ['GEMROOT'] = m.group(0)
 
-# Define a unique identifier for the usb device used to connect the master
-# Arduino. This could be something like "Arduino", though on our UC Davis
-# GEM system, we use a usb adapter from the Arduino to the computer that has an
-# ID of "Generic CDC".
-master_port_str = "Generic CDC"
+sys.path.append(os.path.join(os.environ['GEMROOT'],'GUI'))
 
-def get_master_port():
-    ports = list(serial.tools.list_ports.comports())
-    for p in ports:
-        # Check for ID of usb device used to connect Arduino
-        if master_port_str in p[1]:
-            pid = str(p)
-            return pid.split(' ')[0]
-
-# Get master Arduino port ID
-master_port = get_master_port()
 
 # Define experimental presets
 presets = {
     # master serial port info
-    "serial": {"port": master_port, "baud_rate": 115200, "timeout": 5},
+    "serial": {"port": get_master_port(), "baud_rate": 115200, "timeout": 5},
 
     # beginning of output file string for output data files
     "filename": "GEM_example",
@@ -42,7 +33,7 @@ presets = {
     "data_dir": "/Users/" + os.environ['USER'] +        "/Desktop/GEM_data/demo_data/",
 
     # path to GEMConstants.h
-    "hfile": rootpath + "GEM/GEM/GEMConstants.h",
+    "hfile": os.path.join(os.environ['GEMROOT'],"GEM/GEMConstants.h"),
 
     # number of players in the experiment. NB: all 4 slaves Arduinos can still be attached to master
     "slaves_requested": 4,
@@ -66,7 +57,10 @@ presets = {
 
     # algorithm used in adapting metronome. NB: at present, only "average" is
     # available. Future releases will incorporate additional heurstic options.
-    "metronome_heuristic": ["average"]
+    "metronome_heuristic": ["average"],
+
+    # Are we connecting to a Group Session in PyEnsemble for post-run data collection, e.g. surveys
+    "connect_pyensemble": True,
 }
 
 

@@ -4,6 +4,8 @@ import serial
 import json
 import re
 
+import serial.tools.list_ports
+
 # ==============================================================================
 # convert a python int to a bytestring
 def uint64(n):
@@ -43,6 +45,23 @@ def parse_constants(hfile):
         d[match.group("name")] = parse_uint(match.group("val"))
 
     return d
+
+# ==============================================================================
+# Function to get the relevant USB port
+#
+# Define a unique identifier for the usb device used to connect the master
+# Arduino. This could be something like "Arduino", though on our UC Davis
+# GEM system, we use a usb adapter from the Arduino to the computer that has an
+# ID of "Generic CDC".
+
+def get_master_port(usb_adapter="Generic CDC"):
+    ports = list(serial.tools.list_ports.comports())
+    for p in ports:
+        # Check for ID of usb adapter we use to connect Arduino
+        if usb_adapter in p[1]:
+            pid = str(p)
+            return pid.split(' ')[0]
+
 
 # ==============================================================================
 # class to wrap common data file IO operations (writing headers etc.)
