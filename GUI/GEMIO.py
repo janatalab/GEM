@@ -20,7 +20,8 @@ def uint64(n):
 def parse_uint(val):
     #uint -> char, all other data type can stay as strings
     if val[0:2] == "0x":
-        v = val[2:].decode("hex")
+        # v = val[2:].decode("hex")  # Python 2
+        v = val[2:]  # Python 3
     else:
         v = val
     return v
@@ -115,8 +116,10 @@ class GEMDataFile:
         nel = len(hdr_str)
 
         # Write the length of the header dict as an 8 byte unsigned int
-        self._io.write(uint64(nel))
-        self._io.write(hdr_str)
+        # self._io.write(uint64(nel)) # Python 2
+        self._io.write(uint64(nel).encode())  # Python 3
+        # self._io.write(hdr_str)  # Python 2
+        self._io.write(hdr_str.encode())  # Python 3
 
     def write_file_header(self, d, nruns):
         self.reopen()
@@ -126,14 +129,17 @@ class GEMDataFile:
         # initialize a block of run_header offsets with 64bit 0s
         print("Writing idx_map @ {}".format(self._io.tell()))
         self.idx_map_offset = self._io.tell()
-        self._io.write('\x00' * 8 * nruns)
+        # self._io.write('\x00' * 8 * nruns)   # Python 2
+        s = '\x00' * 8 * nruns   # Python 3
+        self._io.write(s.encode()) # Python 3
 
     def write_run_offset(self, krun, offset):
         self.reopen()
         ptr = self._io.tell()
         print("Writing run {} offset at: {}".format(krun, self.idx_map_offset + (krun * 8)))
         self._io.seek(self.idx_map_offset + (krun * 8), 0)
-        self._io.write(uint64(offset))
+        # self._io.write(uint64(offset))   # Python 2
+        self._io.write(uint64(offset).encode())   # Python 3
         self._io.seek(ptr, 0)
 
 # ==============================================================================
