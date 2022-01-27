@@ -810,7 +810,7 @@ class GEMGUI(Frame):
 
         # Determine whether we are connecting with PyEnsemble
         self.use_pyensemble = False
-        if self.presets["connect_pyensemble"]:
+        if self.presets.get("connect_pyensemble", False):
             self.use_pyensemble = True
 
         # Add relevant modules
