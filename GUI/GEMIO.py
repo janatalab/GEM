@@ -116,7 +116,6 @@ class GEMDataFile:
                 # the current run <krun> was previously aborted, so seek back
                 # to where that run started to overwrite that run's data
                 self._io.seek(self.run_offsets[krun], 0)
-
         hdr_str = json.dumps(hdr_dict)
         nel = len(hdr_str)
         nel_uint64 = uint64(nel)
@@ -183,7 +182,11 @@ class GEMIOManager:
         self.ifo = serial_ifo
         self.datafile = datafile
         self.is_spoof = is_spoof
+<<<<<<< HEAD
 
+=======
+    
+>>>>>>> 4e6a92b (serial spoof)
     # --------------------------------------------------------------------------
     def __enter__(self):
         # ======================================================================
@@ -196,10 +199,17 @@ class GEMIOManager:
                         port=ifo["port"],
                         baudrate=ifo["baud_rate"],
                         timeout=ifo["timeout"]
+<<<<<<< HEAD
                     )
 
                 else:
                     self.com = SerialSpoof()
+=======
+                ) 
+                else:
+                    self.com = SerialSpoof()
+                
+>>>>>>> 4e6a92b (serial spoof)
 
                 if self.com.isOpen():
                     print("serial is open!")
@@ -257,6 +267,8 @@ class GEMAcquisition(Thread):
         self.tempo = self.constants["GEM_METRONOME_TEMPO"] + bytes(str(int(presets["metronome_tempo"])), 'utf-8') 
 
         self.alpha = self.constants["GEM_METRONOME_ALPHA"] + bytes(str(alpha),'utf-8')
+
+        self.is_spoof = presets.get("spoof_mode", False)
 
         self.is_spoof = presets.get("spoof_mode", False)
 
