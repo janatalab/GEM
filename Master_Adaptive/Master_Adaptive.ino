@@ -281,7 +281,7 @@ void setup()
 //     // Load a sound file
 //     report.infostr("Loading sound file");
 // #endif
-
+    // LOAD SOUND FOR MASTER
     sound.loadByName(soundName);
 
     {
@@ -350,6 +350,12 @@ void idle()
 #endif
 
                 break;
+            
+            case GEM_SOUNDS:
+                // sounds_str = Serial.readString() make sounds a global variable?
+                // create array from str
+                // sound.loadSound(sound_arr[0])
+                // write sound to each slave
 
             //NOTE: potential error reporting system:
             //ECC is requestig error status, send value of global

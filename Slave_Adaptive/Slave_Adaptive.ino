@@ -83,6 +83,7 @@ uint8_t minITI = 50; // the minimum amount of time between the currentTime and p
 
 // Get ourselves a GEMSound object
 //int soundIndex = 1;  // The index of the sound to load. Should be passed in as a parameter from the ECC
+int soundIndex = 1;
 char soundName[ ] = "1.WAV";
 GEMSound sound;
 
@@ -119,6 +120,7 @@ void setup() {
 
   // Load a sound file
   if (DEBUG) report.infostr("Loading sound file");
+  setSound(soundIndex);
   sound.loadByName(soundName);
   if (DEBUG) report.infostr("Done loading sound file");
 
@@ -126,6 +128,22 @@ void setup() {
 //////////////////////////////////////////////////////////////////
 /////////////// END OF ARDUINO Setup() FUNCTION //////////////////
 //////////////////////////////////////////////////////////////////
+
+/////////////////////////////////////////////////////////
+////////////////// Sound Index FUNCTION /////////////////
+/////////////////////////////////////////////////////////
+void setSound(int soundCode) {
+  switch (soundCode)
+  {
+    case 1:
+      soundName = "1.WAV"
+  }
+}
+/////////////////////////////////////////////////////////
+////////////////// END Sound Index FUNCTION /////////////////
+/////////////////////////////////////////////////////////
+
+
 
 /////////////////////////////////////////////////////////
 //////////////// ARDUINO Loop() FUNCTION ////////////////
@@ -187,7 +205,7 @@ void loop() {
 // receiveEvent is passed to Wire.onReceive() as an argument
 void receiveEvent(int howMany){
   int requestCode;
-
+ 
   // Figure out what we need to do based on the message identifier code
   if (DEBUG) Serial.println("Received Wire msg");
 
@@ -212,7 +230,10 @@ void receiveEvent(int howMany){
     case UNMUTE_SOUND:
       muteSound = false;
       break;
-
+    case UPDATE_SOUND:
+      soundIndex = Wire.read();
+      break;
+      // call function to update sound 
     default:
       Serial.print("Slave ");
       Serial.print(ADDRESS);

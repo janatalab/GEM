@@ -252,6 +252,8 @@ class GEMAcquisition(Thread):
 
         self.is_spoof = presets.get("spoof_mode", False)
 
+        self.sounds = self.constants["GEM_SOUNDS"] + str(presets["sound_ids"])
+
     # override Thread.run()
     def run(self):
         with GEMIOManager(self.serial_ifo, self.datafile, self.is_spoof) as io:
@@ -260,12 +262,16 @@ class GEMAcquisition(Thread):
             io.com.readline()
 
             # send relevant parameters to arduino
-            self.itc.send_message("data_viewer", "Sending tempo to arduino: " + self.tempo[1:])
+            self.itc.send_message("data_viewer", "Sending tempo to arduino: " + self.tempo[2:])
             io.send(self.tempo)
             sleep(0.100)
 
-            self.itc.send_message("data_viewer", "Sending alpha to arduino: " + self.alpha[1:])
+            self.itc.send_message("data_viewer", "Sending alpha to arduino: " + self.alpha[2:])
             io.send(self.alpha)
+            sleep(0.100)
+
+            self.itc.send_message("data_viewer", "Sending sounds to arduino: "+ self.sounds[2:])
+            io.send(self.sounds)
             sleep(0.100)
             #
             # # TODO: wait for master to tell us it's ready?
