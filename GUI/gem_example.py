@@ -20,17 +20,20 @@ if not os.environ.get('GEMROOT', None):
 
 sys.path.append(os.path.join(os.environ['GEMROOT'],'GUI'))
 
+# Indicate the serial# of the master (metronome) Arduino.
+# This is used to search for the correct port information
+master_serial_num = "9543731333535131D171"
 
 # Define experimental presets
 presets = {
     # master serial port info
-    "serial": {"port": get_master_port(), "baud_rate": 115200, "timeout": 5},
+    "serial": {"port": get_master_port(serial_num=master_serial_num), "baud_rate": 115200, "timeout": 5},
 
     # beginning of output file string for output data files
     "filename": "GEM_example",
 
     # directory for output data
-    "data_dir": "/Users/" + os.environ['USER'] +        "/Desktop/GEM_data/demo_data/",
+    "data_dir": "/Users/" + os.environ['USER'] + "/Desktop/GEM_data/demo_data/",
 
     # path to GEMConstants.h
     "hfile": os.path.join(os.environ['GEMROOT'],"GEM/GEMConstants.h"),
@@ -60,7 +63,7 @@ presets = {
     "metronome_heuristic": ["average"],
 
     # Are we connecting to a Group Session in PyEnsemble for post-run data collection, e.g. surveys
-    "connect_pyensemble": True,
+    "connect_pyensemble": False,
 }
 
 

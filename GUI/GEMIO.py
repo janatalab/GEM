@@ -3,8 +3,11 @@ from time import time, sleep
 import serial
 import json
 import re
+import codecs, struct
 
 import serial.tools.list_ports
+
+import pdb
 
 # ==============================================================================
 # convert a python int to a bytestring
@@ -21,7 +24,8 @@ def parse_uint(val):
     #uint -> char, all other data type can stay as strings
     if val[0:2] == "0x":
         # v = val[2:].decode("hex")  # Python 2
-        v = val[2:]  # Python 3
+        # v = val[2:]  # Python 3
+        v = codecs.decode(val[2:],"hex")
     else:
         v = val
     return v
@@ -55,13 +59,20 @@ def parse_constants(hfile):
 # GEM system, we use a usb adapter from the Arduino to the computer that has an
 # ID of "Generic CDC".
 
-def get_master_port(usb_adapter="Generic CDC"):
+def get_master_port(usb_adapter="Generic CDC", serial_num=None):
     ports = list(serial.tools.list_ports.comports())
     for p in ports:
-        # Check for ID of usb adapter we use to connect Arduino
-        if usb_adapter in p[1]:
-            pid = str(p)
-            return pid.split(' ')[0]
+        # If we've specified the serial number we are looking for, use that
+        if serial_num:
+            m = re.search(r'SER='+serial_num, p.hwid)
+            if m:
+                return p.device
+
+        else:
+            # Check for ID of usb adapter we use to connect Arduino
+            if usb_adapter in p[1]:
+                pid = str(p)
+                return pid.split(' ')[0]
 
 
 # ==============================================================================
@@ -243,9 +254,16 @@ class GEMAcquisition(Thread):
 
         self.windows = presets["windows"]
 
-        self.tempo = self.constants["GEM_METRONOME_TEMPO"] + str(int(presets["metronome_tempo"]))
+        # pdb.set_trace()
+        # self.tempo = self.constants["GEM_METRONOME_TEMPO"] + str(int(presets["metronome_tempo"])) # Python 2
+        # self.tempo = self.constants["GEM_METRONOME_TEMPO"] + bytes(int(presets["metronome_tempo"])) # Python 3
+        self.tempo = self.constants["GEM_METRONOME_TEMPO"] + int(presets["metronome_tempo"]).to_bytes(2,byteorder="big") # Python 3
 
-        self.alpha = self.constants["GEM_METRONOME_ALPHA"] + str(alpha)
+        # self.alpha = self.constants["GEM_METRONOME_ALPHA"] + str(alpha) # Python 2
+        # self.alpha = self.constants["GEM_METRONOME_ALPHA"] + bytes(alpha) # Python 3
+        self.alpha = self.constants["GEM_METRONOME_ALPHA"] + alpha.tobytes() # Python 3
+
+        # pdb.set_trace()
 
     # override Thread.run()
     def run(self):
@@ -255,11 +273,13 @@ class GEMAcquisition(Thread):
             io.com.readline()
 
             # send relevant parameters to arduino
-            self.itc.send_message("data_viewer", "Sending tempo to arduino: " + self.tempo[1:])
+            # self.itc.send_message("data_viewer", "Sending tempo to arduino: " + self.tempo[1:])
+            self.itc.send_message("data_viewer", "Sending tempo to arduino: " + str(int.from_bytes(self.tempo[1:],byteorder="big")))
             io.send(self.tempo)
             sleep(0.100)
 
-            self.itc.send_message("data_viewer", "Sending alpha to arduino: " + self.alpha[1:])
+            # self.itc.send_message("data_viewer", "Sending alpha to arduino: " + self.alpha[1:])
+            self.itc.send_message("data_viewer", "Sending alpha to arduino: " + str(struct.unpack('d',self.alpha[1:])[0]))
             io.send(self.alpha)
             sleep(0.100)
             #
