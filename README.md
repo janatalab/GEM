@@ -42,6 +42,8 @@ Within the Arduino libaries directory, make a symbolic link to this repository's
 
 After launching a Python virtual environment, e.g. virtualenv, that you have created for this project, install the required Python files using the requirements.txt file in the GUI directory.
 
+See the Wiki for further setup instructions.
+
 # Citations
 Schultz, B. G., & van Vugt, F. T. (2016). Tap Arduino: An Arduino microcontroller for low-latency auditory feedback in sensorimotor synchronization experiments. Behavior Research Methods, 48(4), 1591–1607. [https://doi.org/10.3758/s13428-015-0671-3](https://doi.org/10.3758/s13428-015-0671-3)
 
