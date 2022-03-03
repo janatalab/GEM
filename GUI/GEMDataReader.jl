@@ -4,7 +4,7 @@ import JSON
 using FileOps
 export convert_file, convert_files, GEMDataFile, read_run
 
-const MAX_SLAVES = 0x04
+const MAX_TAPPERS = 0x04
 # ---------------------------------------------------------------------------- #
 struct GEMDataFile
     path::String
@@ -92,7 +92,7 @@ function convert_file(ifile::String, ofile::String)
     hdrs = Vector{Dict}()
 
     open(ofile, "w") do io
-        labels = join(["\"async_$(x)\"" for x in 1:MAX_SLAVES], ", ")
+        labels = join(["\"async_$(x)\"" for x in 1:MAX_TAPPERS], ", ")
         write(io,
             """
             \"run\", \"alpha\", \"window\", \"click_time\", $(labels), \"next_adjust\"
@@ -174,7 +174,7 @@ function read_packet(io::IOStream)
         read(io, UInt8),            #data-transfer-protocol id
         read(io, UInt16),           #window number
         read(io, UInt32),           #click_time
-        read(io, Int16, MAX_SLAVES),#asynchronies
+        read(io, Int16, MAX_TAPPERS),#asynchronies
         read(io, Int16)             #next adjustment factor
     )
 end

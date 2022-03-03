@@ -8,11 +8,11 @@
 # LF TODO:
 # Write out alpha value on each run to .gdf file; also need to write individual
 # run headers to .json file
-# Implement Error handling on master side (e.g. couldn't find audio file)
+# Implement Error handling on metronome side (e.g. couldn't find audio file)
 # --- not a huge priority
 # Implement audio feedback conditions
 # --- send message to experimenter about what to do
-# Set slave sound from ECC
+# Set tapper sound from ECC
 # --- this should wait until v2
 '''
 
@@ -698,7 +698,7 @@ class GroupSession(GEMGUIComponent):
         # Fill out the form
         data = {"csrfmiddlewaretoken": s.cookies["csrftoken"]}
         data.update({
-            "slaves_requested": self.parent.presets["slaves_requested"],
+            "tappers_requested": self.parent.presets["tappers_requested"],
             "metronome_alpha": self.parent.presets["metronome_alpha"],
             "metronome_tempo": self.parent.presets["metronome_tempo"],
             "repeats": self.parent.presets["repeats"],
@@ -814,7 +814,7 @@ class GEMGUI(Frame):
             self.use_pyensemble = True
 
         # Add relevant modules
-        self.basic_info = BasicInfo(self, self.presets["slaves_requested"])
+        self.basic_info = BasicInfo(self, self.presets["tappers_requested"])
 
         # Add PyEnsemble components if requested
         if self.use_pyensemble:

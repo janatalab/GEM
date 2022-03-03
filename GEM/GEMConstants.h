@@ -34,8 +34,8 @@ fact, as they obviously can't follow the family system.
 
 The primary motivation for this chage is 1) Petr's request (and it makes sense),
 and 2) if the ECC is going to be setting parameters via Serial IO (e.g. tell
-the master what alpha value to use for the following run) then we need some
-kind of a state system so the master knows when we are in vs. between runs
+the metronome what alpha value to use for the following run) then we need some
+kind of a state system so the metronome knows when we are in vs. between runs
 (i.e. when to allow parameters to be changed etc.) Feedback is welcome.
 -SA 20170706
 ----------------------------------------------------------------------------- */
@@ -52,7 +52,7 @@ GEM Control constants (0x0* = 0 - 15)
 #define GEM_STATE_IDLE  0x03  //3
 
 //the "run" state, in which GEM_START, GEM_STOP, MUTE and UNMUTE are the only
-//valid messages from ECC->master and only data is returned from master
+//valid messages from ECC->metronome and only data is returned from metronome
 #define GEM_STATE_RUN   0x04  //4
 
 /* -----------------------------------------------------------------------------
@@ -101,8 +101,8 @@ as ints to indicate this, but often are used in a single-byte context...
 //packet size
 #define GEM_PACKET_SIZE 17
 
-//Slave-related constants
-#define GEM_MAX_SLAVES 4
+//Tapper-related constants
+#define GEM_MAX_TAPPERS 4
 #define NO_RESPONSE   -32000
 // #define GEM_TAP_RESET 0 // not used
 
@@ -112,30 +112,5 @@ as ints to indicate this, but often are used in a single-byte context...
 
 // Duration (ms) of interrupt pin pulses
 #define GEM_WRITE_DUR_MS 1
-
-/* -------------------------------------------------------------------------- */
-// NOTE: everything below was for other branch LF + SA were working on. Can be
-// commented out for v0.0.0
-
-// ECC->Arduino data transfer protocol
-// 2-byte header:
-//    byte 1: recipient (id of master or slave)
-//    byte 2: parameter id (see below)
-// N-byte message (i.e. data) as a '\n' terminated string
-
-// #define GEM_START_EXP 0xff    //255
-// #define GEM_STOP_EXP 0xfe     //254
-// #define GEM_QUERY_STATE 0xfd  //253
-
-//arduino ids
-// #define GEM_MASTER_ID 0x00
-// #define GEM_SLAVE1_ID 0x01
-// #define GEM_SLAVE2_ID 0x02
-// #define GEM_SLAVE3_ID 0x03
-// #define GEM_SLAVE4_ID 0x04
-//
-// //parameter ids
-// #define GEM_WAV_FILE 0x02
-// #define GEM_NUM_SLAVES_REQ 0x03
 
 #endif

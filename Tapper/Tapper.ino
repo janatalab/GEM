@@ -1,4 +1,4 @@
-//////////////////////// SLAVE TAPPER ////////////////////////
+//////////////////////// TAPPER ////////////////////////
 //
 // 18Mar2017 - Petr Janata - essentially rebuilding from scratch, keeping some
 //             portions of previous code
@@ -11,7 +11,7 @@
 
 // WaveHC for the Waveshield which handles the loading and playing of the sounds
 // 18Mar2017 PJ - we should really create a GEMSound class in GEM.h so that we don't have to
-// include this code in both the Master and Slave sketches
+// include this code in both the Metronome and Tapper sketches
 
 // Get all our constants
 #include <GEMConstants.h>
@@ -23,9 +23,9 @@
 #include <GEMreport.h>
 
 ////////// DEFINES //////////
-// Set the address for this slave.
-// This needs to be unique to each tapper (slave), and must therefore
-// be changed as each sketch is compiled and uploaded to each slave device
+// Set the address for this tapper.
+// This needs to be unique to each tapper (tapper), and must therefore
+// be changed as each sketch is compiled and uploaded to each tapper device
 #define ADDRESS 3
 
 
@@ -40,7 +40,7 @@
 
 ////////////// INITIALIZE GLOBAL VARIABLES  //////////////
 // 18Mar2017 PJ - ultimately, the following parameters should be passed in
-//                via the Master during initialization:
+//                via the Metronome during initialization:
 //  PLAY_TIME - how long should a song play for
 //  FSRThresh - the FSR value that should be exceeded in order to register a tap (important for preventing double taps)
 //  DEBUG - if True, then this device will send debugging messages via the Serial interface
@@ -58,18 +58,10 @@ uint8_t sendPin = 6;
 
 
 // the FSR value that should be exceeded in order to register a tap
-// 20 in Schultz and van Vogt
-int FSRThresh = 300; // officially fixed this on 20181004 - LF + PJ + oscilloscope
-//int FSRThresh = 40; // per convo with Petr 20180424 - LF
-// Formerly all FSRs were at 30
-// Going to change back to 30 because seeing weird issues of phantom taps.. - LF 20180423
+// Note that this may vary by FSR and might require some experimentation.
+// The danger in setting it too low is that errant tap events might be triggered
 
-// each FSR is unique -- there is not a one-threshold-fits-all solution
-// LF - 20180419
-// Slave 1 FSR works well at 80
-// Slave 2 FSR works well at 15
-// Slave 3 FSR works well at 300
-// Slave 4 FSR works well at 530
+int FSRThresh = 300; // officially fixed this on 20181004 - LF + PJ + oscilloscope
 
 // Timing parameters
 uint32_t currTime; // stores time at which the FSR exceeds threshold
@@ -214,14 +206,12 @@ void receiveEvent(int howMany){
       break;
 
     default:
-      Serial.print("Slave ");
+      Serial.print("Tapper ");
       Serial.print(ADDRESS);
       Serial.print(" unhandled request code: ");
       Serial.println(requestCode);
   }
 }
-
-//void receiveEvent(int howMany) {
 
 
 ////////////////////////////////////////////////////////

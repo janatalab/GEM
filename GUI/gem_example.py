@@ -7,7 +7,7 @@ Repository link: https://github.com/janatalab/GEM
 '''
 
 from GEMGUI import GEMGUI
-from GEMIO import get_master_port
+from GEMIO import get_metronome_port
 import sys, os, re
 
 # Deal with adding the requisite GEM GUI modules to the path
@@ -20,14 +20,14 @@ if not os.environ.get('GEMROOT', None):
 
 sys.path.append(os.path.join(os.environ['GEMROOT'],'GUI'))
 
-# Indicate the serial# of the master (metronome) Arduino.
+# Indicate the serial# of the metronome Arduino.
 # This is used to search for the correct port information
-master_serial_num = "9543731333535131D171"
+metronome_serial_num = "9543731333535131D171"
 
 # Define experimental presets
 presets = {
-    # master serial port info
-    "serial": {"port": get_master_port(serial_num=master_serial_num), "baud_rate": 115200, "timeout": 5},
+    # metronome serial port info
+    "serial": {"port": get_metronome_port(serial_num=metronome_serial_num), "baud_rate": 115200, "timeout": 5},
 
     # beginning of output file string for output data files
     "filename": "GEM_example",
@@ -38,8 +38,8 @@ presets = {
     # path to GEMConstants.h
     "hfile": os.path.join(os.environ['GEMROOT'],"GEM/GEMConstants.h"),
 
-    # number of players in the experiment. NB: all 4 slaves Arduinos can still be attached to master
-    "slaves_requested": 4,
+    # number of players in the experiment. NB: all 4 tapper Arduinos can remain attached to metronome Arduino
+    "tappers_requested": 4,
 
     # metronome adaptivity levels to be used
     "metronome_alpha": [0, .25, .75, 1],

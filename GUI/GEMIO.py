@@ -54,12 +54,12 @@ def parse_constants(hfile):
 # ==============================================================================
 # Function to get the relevant USB port
 #
-# Define a unique identifier for the usb device used to connect the master
+# Define a unique identifier for the usb device used to connect the metronome
 # Arduino. This could be something like "Arduino", though on our UC Davis
 # GEM system, we use a usb adapter from the Arduino to the computer that has an
 # ID of "Generic CDC".
 
-def get_master_port(usb_adapter="Generic CDC", serial_num=None):
+def get_metronome_port(usb_adapter="Generic CDC", serial_num=None):
     ports = list(serial.tools.list_ports.comports())
     for p in ports:
         # If we've specified the serial number we are looking for, use that
@@ -283,10 +283,10 @@ class GEMAcquisition(Thread):
             io.send(self.alpha)
             sleep(0.100)
             #
-            # # TODO: wait for master to tell us it's ready?
+            # # TODO: wait for metronome to tell us it's ready
             #
 
-            # tell the master to start the experiment
+            # tell the metronome to start the experiment
             io.send(self.constants["GEM_STATE_RUN"])
 
             # notify anyone registered to receive GEM_START signals

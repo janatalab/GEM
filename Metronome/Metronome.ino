@@ -1,8 +1,8 @@
-//////////////////////// GEM MASTER METRONOME/////////////////////////
+//////////////////////// GEM METRONOME/////////////////////////
 //
 // 19Mar2017 Petr Janata - Completely refactored previous code to:
 //  1. take into account new components of GEM Library for handling sounds.
-//  2. use of arrays for slaves instead of repeated chunks of code
+//  2. use of arrays for tappers instead of repeated chunks of code
 //  3. cleaned up interrupt routine handling
 //  4. fixed and simplified adaptive timing mechanism calculations
 //
@@ -35,7 +35,7 @@
 // GEM stuff, including Metronome class
 #include <GEM.h>
 
-//GEMsound object for master
+//GEMsound object for metronome
 #include <GEMsound.h>
 
 // GEM reporting object
@@ -53,7 +53,7 @@
 // send the family code then value separated by a space. If you send them in succession Arduino
 // does not respond properly. - LF 20170706
 
-//#define MAX_SLAVES 4
+//#define MAX_TAPPERS 4
 //#define HANDSHAKE_TIMEOUT 5
 
 //#define BAUD_RATE 115200
@@ -76,8 +76,8 @@ GEMSound sound;
 // Get ourselves a reporting object
 GEMReport report;
 
-//// PINS THAT WE RECEIVE INTERRUPTS ON FROM THE SLAVES
-const uint8_t recPins[GEM_MAX_SLAVES] = {6, 7, 8, 9};
+//// PINS THAT WE RECEIVE INTERRUPTS ON FROM THE TAPPERS
+const uint8_t recPins[GEM_MAX_TAPPERS] = {6, 7, 8, 9};
 
 /* =============================================================================
 Timing variables
@@ -98,17 +98,17 @@ local to that ISR) really *SHOULD* (must?) be qualified as volitile, this is
 especially true for multi-byte data
 -SA 20170628
 ============================================================================= */
-// actual number of slaves, determined dynamically
-volatile uint8_t numSlaves = 0;
+// actual number of tappers, determined dynamically
+volatile uint8_t numTappers = 0;
 
-// Keep track of which slaves are actually connected
-volatile bool slaveIsConnected[GEM_MAX_SLAVES];
+// Keep track of which tappers are actually connected
+volatile bool tapperIsConnected[GEM_MAX_TAPPERS];
 
 // Create an array of tap times for the current window,
 // relative to the next schedule metronome time
-volatile int currAsynch[GEM_MAX_SLAVES];
+volatile int currAsynch[GEM_MAX_TAPPERS];
 
-volatile uint8_t currSlave;
+volatile uint8_t currTapper;
 volatile uint8_t currPin;
 
 /* NOTE: the metronome is a special case, as it's <next> member variable is
@@ -131,24 +131,24 @@ int metronomeLED = A1;
 /* =============================================================================
 Interupt functions
 ============================================================================= */
-// Figure out which slave in our slave array we are dealing with
+// Figure out which tapper in our tapper array we are dealing with
 // given the interrupt that was fired
 uint8_t indexFromPin(uint8_t thePin)
 {
-    for (uint8_t s = 0; s < GEM_MAX_SLAVES; s++)
+    for (uint8_t s = 0; s < GEM_MAX_TAPPERS; s++)
     {
         if (recPins[s] == thePin) { return s; }
     }
 }
 /* -------------------------------------------------------------------------- */
-// Slave handshake function //
-void slaveHandshake(void)
+// Tapper handshake function //
+void tapperHandshake(void)
 {
     // Make sure the interrupted pin was the one we wanted
     if (arduinoInterruptedPin == currPin)
     {
-        slaveIsConnected[currSlave] = true;
-        numSlaves++;
+        tapperIsConnected[currTapper] = true;
+        numTappers++;
     }
 }
 /* -------------------------------------------------------------------------- */
@@ -162,31 +162,31 @@ void registerTap(void)
 /* =============================================================================
 Helper functions
 ============================================================================= */
-inline void wire_write(uint8_t slaveid, uint8_t val)
+inline void wire_write(uint8_t tapperid, uint8_t val)
 {
 //    Serial.print("Sending ");
 //    Serial.print(val);
-//    Serial.print(" to slave ");
-//    Serial.println(slaveid);
-    Wire.beginTransmission(slaveid); // transmit to device #
+//    Serial.print(" to tapper ");
+//    Serial.println(tapperid);
+    Wire.beginTransmission(tapperid); // transmit to device #
     Wire.write(val);                 // sends one byte
     Wire.endTransmission();          // stop transmitting
 //    Serial.println("Done transmitting");
 }
 /* -------------------------------------------------------------------------- */
-void write_to_slaves(uint8_t val)
+void write_to_tappers(uint8_t val)
 {
-    for (uint8_t k = 0; k < GEM_MAX_SLAVES; ++k)
+    for (uint8_t k = 0; k < GEM_MAX_TAPPERS; ++k)
     {
-        //NOTE: this is a bit of a more interesting case, <slaveIsConnected> is
-        //a volatile global (set in the slave handshake ISR) but once it is set
+        //NOTE: this is a bit of a more interesting case, <tapperIsConnected> is
+        //a volatile global (set in the tapper handshake ISR) but once it is set
         //it functions effectivly as read-only (never gets reset) so
         //'technically' we shouldn't have to protect this with a
         //ScopedVolatileLock as we don't use this function until well after
-        //<slaveIsConnected> is set... but we'lll throw one in just to be safe
+        //<tapperIsConnected> is set... but we'lll throw one in just to be safe
         //(and performance is not ciritical here) -SA 20170702
         ScopedVolatileLock lock;
-        if (slaveIsConnected[k])
+        if (tapperIsConnected[k])
         {
             wire_write(k+1, val);
         }
@@ -207,16 +207,16 @@ void setup()
 
     // Enable the Wire interface for I2C communication
     // report.infostr("Enabling I2C");
-    Wire.begin(); // master does not need address
+    Wire.begin(); // metronome does not need address
 
     // Enable PINs for flashing LEDs
     // report.infostr("Enabling diagnostic LEDs");
     pinMode(LEDPin, OUTPUT); // Interrupt
     pinMode(metronomeLED, OUTPUT); // Metronome
 
-    // Check to see which slaves are connected
-    // report.infostr("Checking for connected slaves");
-    for (uint8_t s = 0; s < GEM_MAX_SLAVES; s++)
+    // Check to see which tappers are connected
+    // report.infostr("Checking for connected tappers");
+    for (uint8_t s = 0; s < GEM_MAX_TAPPERS; s++)
     {
         //NOTE: because the logic here is so procedural (the handshake
         //interrupt can ONLY be called within a very narrowly define window -
@@ -232,25 +232,25 @@ void setup()
             // Get the current pin
             currPin = recPins[s];
 
-            // Copy the current slave to global
-            currSlave = s;
+            // Copy the current tapper to global
+            currTapper = s;
         }
 
         // Enable the interrupt on the pin that we're expecting to receive acknowledgement on
-        enableInterrupt(currPin, slaveHandshake, RISING);
+        enableInterrupt(currPin, tapperHandshake, RISING);
 
-        // Send a message on the I2C bus, asking the slave to pulse the interrupt pin
+        // Send a message on the I2C bus, asking the tapper to pulse the interrupt pin
         wire_write(s+1, GEM_REQUEST_ACK);
         delay(GEM_HANDSHAKE_TIMEOUT); // give time to do handshake
 
         // Disable the interrupt
         disableInterrupt(currPin);
 
-        // check whether we successfully had slave communicate on designated pin
-        if (slaveIsConnected[currSlave])
+        // check whether we successfully had tapper communicate on designated pin
+        if (tapperIsConnected[currTapper])
         {
 #ifdef DEBUG
-            Serial.print("Found slave: ");
+            Serial.print("Found tapper: ");
             Serial.println(currPin);
 #endif
             // Attach our desired ISR
@@ -259,41 +259,35 @@ void setup()
         else
         {
 #ifdef DEBUG
-            Serial.println("Slave connect failed");
+            Serial.println("Tapper connect failed");
 #endif
             // flash LED
             digitalWrite(LEDPin, HIGH);
             delay(500);
             digitalWrite(LEDPin, LOW);
         }
-    } // for (int s = 0; s < GEM_MAX_SLAVES; s++)
+    } // for (int s = 0; s < GEM_MAX_TAPPERS; s++)
 
 #ifdef DEBUG
-    // Report on number of active slaves
-    Serial.print("# slaves: ");
-    Serial.println(numSlaves);
+    // Report on number of active tappers
+    Serial.print("# tappers: ");
+    Serial.println(numTappers);
 #endif
 
     // Initialize the sound card
     sound.setupSDCard();
 
-// #ifdef DEBUG
-//     // Load a sound file
-//     report.infostr("Loading sound file");
-// #endif
-
     sound.loadByName(soundName);
 
     {
         ScopedVolatileLock lock;
-        for (uint8_t k = 0; k < GEM_MAX_SLAVES; ++k)
+        for (uint8_t k = 0; k < GEM_MAX_TAPPERS; ++k)
         {
           currAsynch[k] = NO_RESPONSE;
         }
     }
 
 #ifdef DEBUG
-    // report.infostr("Done loading sound file");
     Serial.println("Send 4 then 1 to start");
 #endif
 } // setup()
@@ -395,11 +389,11 @@ void run()
                 break;
 
             case MUTE_SOUND:
-                write_to_slaves(MUTE_SOUND);
+                write_to_tappers(MUTE_SOUND);
                 break;
 
             case UNMUTE_SOUND:
-                write_to_slaves(UNMUTE_SOUND);
+                write_to_tappers(UNMUTE_SOUND);
                 break;
 #ifdef DEBUG
             default:
@@ -436,11 +430,11 @@ void run()
             //function (i.e. scheduleNext(), which I have done) but doing it
             //this way makes the sketchiness unobvious -SA 20170702
 
-            // Schedule the next metronome event given our asynchronies, active slaves, and the desired heuristic
+            // Schedule the next metronome event given our asynchronies, active tappers, and the desired heuristic
             int asynchAdjust = met.scheduleNext(
                 currAsynch,
-                slaveIsConnected,
-                GEM_MAX_SLAVES,
+                tapperIsConnected,
+                GEM_MAX_TAPPERS,
                 GEM_METRONOME_HEURISTIC_AVERAGE
             );
 
@@ -498,13 +492,13 @@ void run()
             */
             {
                 ScopedVolatileLock lock;
-                Serial.write((byte *)currAsynch, sizeof (int) * GEM_MAX_SLAVES);
+                Serial.write((byte *)currAsynch, sizeof (int) * GEM_MAX_TAPPERS);
 
                 // Send calculated metronome adjustment to ECC
                 Serial.write((byte *)&asynchAdjust, sizeof (int));
 
                 // reset the current tap times
-                for (uint8_t s = 0; s < GEM_MAX_SLAVES; ++s)
+                for (uint8_t s = 0; s < GEM_MAX_TAPPERS; ++s)
                 {
                     currAsynch[s] = NO_RESPONSE;
                 }
