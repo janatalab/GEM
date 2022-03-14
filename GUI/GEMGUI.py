@@ -210,7 +210,8 @@ class DataViewer(GEMGUIComponent):
             self.buffer = self.buffer[self.buffer.find('\n')+1:]
 
         self.nline += 1
-        self.buffer += msg
+        # self.buffer += msg
+        self.buffer += str(msg) # Python 3
 
         if not self.buffer.endswith('\n'):
             self.buffer += '\n'
@@ -383,6 +384,7 @@ class ExperimentControl(GEMGUIComponent):
     # --------------------------------------------------------------------------
     def clean_up(self):
         print("Asking IO thread to terminate")
+        print(f"Running: {self.running}")
         if self.running:
             self.acq.join()
             self.timer.cancel()
@@ -399,7 +401,9 @@ class ExperimentControl(GEMGUIComponent):
 
     # --------------------------------------------------------------------------
     def end_run(self):
+        # self.parent.itc.set_done(True) # pj added
         self.clean_up()
+
         self.counter -= 1
         self["runsleft"].set_text(str(self.counter))
 
@@ -865,7 +869,7 @@ class GEMGUI(Frame):
         self.presets["ioi"] = int(60000 / self["metronome_tempo"])
 
     def randomize_alphas(self):
-        self.alphas = np.repeat(self["metronome_alpha"], self["repeats"])
+        self.alphas = np.repeat(self["metronome_alpha"], self["repeats"]).astype(float)
         np.random.shuffle(self.alphas)
 
         # TODO: need to save random list and write to header and ideally to

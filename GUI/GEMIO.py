@@ -214,6 +214,7 @@ class GEMIOManager:
 
             def send(self, msg):
                 self.com.write(msg)
+                print(f"Sent {msg}")
 
             def flush(self):
                 self.com.flush()
@@ -254,16 +255,9 @@ class GEMAcquisition(Thread):
 
         self.windows = presets["windows"]
 
-        # pdb.set_trace()
-        # self.tempo = self.constants["GEM_METRONOME_TEMPO"] + str(int(presets["metronome_tempo"])) # Python 2
-        # self.tempo = self.constants["GEM_METRONOME_TEMPO"] + bytes(int(presets["metronome_tempo"])) # Python 3
-        self.tempo = self.constants["GEM_METRONOME_TEMPO"] + int(presets["metronome_tempo"]).to_bytes(2,byteorder="big") # Python 3
+        self.tempo = self.constants["GEM_METRONOME_TEMPO"] + bytes(str(int(presets["metronome_tempo"])), 'utf-8') # Python 3
 
-        # self.alpha = self.constants["GEM_METRONOME_ALPHA"] + str(alpha) # Python 2
-        # self.alpha = self.constants["GEM_METRONOME_ALPHA"] + bytes(alpha) # Python 3
-        self.alpha = self.constants["GEM_METRONOME_ALPHA"] + alpha.tobytes() # Python 3
-
-        # pdb.set_trace()
+        self.alpha = self.constants["GEM_METRONOME_ALPHA"] + bytes(str(alpha),'utf-8') # Python 3
 
     # override Thread.run()
     def run(self):
@@ -273,15 +267,28 @@ class GEMAcquisition(Thread):
             io.com.readline()
 
             # send relevant parameters to arduino
-            # self.itc.send_message("data_viewer", "Sending tempo to arduino: " + self.tempo[1:])
-            self.itc.send_message("data_viewer", "Sending tempo to arduino: " + str(int.from_bytes(self.tempo[1:],byteorder="big")))
+            self.itc.send_message("data_viewer", "Sending tempo to arduino: " + self.tempo[1:].decode('utf-8'))
             io.send(self.tempo)
             sleep(0.100)
 
-            # self.itc.send_message("data_viewer", "Sending alpha to arduino: " + self.alpha[1:])
-            self.itc.send_message("data_viewer", "Sending alpha to arduino: " + str(struct.unpack('d',self.alpha[1:])[0]))
+            # sleep(3) # pj added
+            # n = io.available()
+            # if n > 0:
+            #     print(io.com.read(n))
+            # else:
+            #     print("Acknowledgment tempo receipt not received")
+
+            self.itc.send_message("data_viewer", "Sending alpha to arduino: " + self.alpha[1:].decode('utf-8'))
             io.send(self.alpha)
             sleep(0.100)
+
+            # sleep(3) # pj added
+            # n = io.available()
+            # if n > 0:
+            #     print(io.com.read(n))
+            # else:
+            #     print("Acknowledgment alpha receipt not received")
+
             #
             # # TODO: wait for metronome to tell us it's ready
             #
@@ -289,15 +296,23 @@ class GEMAcquisition(Thread):
             # tell the metronome to start the experiment
             io.send(self.constants["GEM_STATE_RUN"])
 
+            # sleep(5) # pj added
+            # n = io.available()
+            # if n > 0:
+            #     print(io.com.read(n))
+            # else:
+            #     print("Acknowledgment of GEM_STATE_RUN receipt not received")
+
             # notify anyone registered to receive GEM_START signals
             # no message is needed (defaults to "")
             self.itc.send_message("run_start")
-
             io.send(self.constants["GEM_START"])
 
             # track bytes received for debugging
             total = 0
-            expected = 17 * self.windows #self.constants["GEM_PACKET_SIZE"] * self.windows
+            expected = int(self.constants["GEM_PACKET_SIZE"]) * self.windows
+
+            print(f"[INFO]: Expecting {expected} bytes total")
 
             tstart = time()
             done = self.itc.check_done()
@@ -318,10 +333,12 @@ class GEMAcquisition(Thread):
 
                     # update byte count
                     total += n
+                    # print(f"[INFO]: {total} bytes received so far")
 
+                # Check for an abort
                 done = self.itc.check_done()
 
             io.send(self.constants["GEM_STOP"])
 
-            print("[INFO]: Received {} bytes of data during this run".format(total))
+            print(f"[INFO]: Received {total} bytes of data during this run")
             print("IO thread terminated")

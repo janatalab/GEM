@@ -7,33 +7,30 @@ Contact: pjanata@ucdavis.edu
 Repository link: https://github.com/janatalab/GEM
 '''
 
+import sys, os, re
+
+# Deal with adding the requisite GEM GUI modules to the path
+if not os.environ.get('GEMROOT', None):
+    # Try to get the GEM path from this module's path.
+    p = re.compile('.*/GEM/')
+    m = p.match(os.path.join(os.path.abspath(os.path.curdir), __file__))
+    if m:
+        os.environ['GEMROOT'] = m.group(0)
+
+sys.path.append(os.path.join(os.environ['GEMROOT'],'GUI'))
+
 from GEMGUI import GEMGUI
-import os
-import serial.tools.list_ports
+from GEMIO import get_metronome_port
 
-# Define path to Arduino directory
-rootpath = "/Users/" + os.environ['USER'] + "/Documents/Arduino/"
-
-# Define a unique identifier for the usb device used to connect the metronome
-# Arduino. This could be something like "Arduino", though on our UC Davis
-# GEM system, we use a usb adapter from the Arduino to the computer that has an ID of "Generic CDC".
-metronome_port_str = "Generic CDC"
-
-def get_metronome_port():
-    ports = list(serial.tools.list_ports.comports())
-    for p in ports:
-        # Check for ID of usb device used to connect Arduino
-        if metronome_port_str in p[1]:
-            pid = str(p)
-            return pid.split(' ')[0]
-
-# Get metronome Arduino port ID
-metronome_port = get_metronome_port()
+# Indicate the serial# of the metronome Arduino.
+# This is used to search for the correct port information
+# metronome_serial_num = "9543731333535131D171"
+metronome_serial_num = "95536333830351317171"
 
 # Define experimental presets
 presets = {
     # metronome serial port info
-    "serial": {"port": metronome_port, "baud_rate": 115200, "timeout": 5},
+    "serial": {"port": get_metronome_port(serial_num=metronome_serial_num), "baud_rate": 115200, "timeout": 5},
 
     # beginning of output file string for output data files
     "filename": "GEM_volume",
@@ -42,25 +39,25 @@ presets = {
     "data_dir": "/Users/" + os.environ['USER'] + "/Desktop/GEM_data/volume_trial/",
 
     # path to GEMConstants.h
-    "hfile": rootpath + "GEM/GEM/GEMConstants.h",
+    "hfile": os.path.join(os.environ['GEMROOT'],"GEM/GEMConstants.h"),
 
     # number of players in the experiment. NB: all 4 tapper Arduinos should still be attached to metronome
     "tappers_requested": 1, # don't care about participant IDs since this is just for adjusting volume
 
     # metronome adaptivity levels to be used
-    "metronome_alpha": 0,
+    "metronome_alpha": 0.25,
 
     # tempo of the metronome; unit: beats-per-minute
     "metronome_tempo": 120.0,
 
     # number of repetitions for each alpha value
-    "repeats": 3,
+    "repeats": 3, 
 
     # number of metronome clicks
-    "windows": 300,
+    "windows": 15, 
 
     # Future releases will allow for all variations on hearing self, metronome, and others in the experiment.
-    "audio_feedback": ["hear_metronome_and_self"],
+    "audio_feedback": ["hear_metronome_and_self"], 
 
     # algorithm used in adapting metronome. NB: at present, only "average" is available. Future releases will incorporate additional heurstic options.
     "metronome_heuristic": ["average"]

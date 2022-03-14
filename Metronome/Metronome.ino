@@ -38,9 +38,6 @@
 //GEMsound object for metronome
 #include <GEMsound.h>
 
-// GEM reporting object
-#include <GEMreport.h>
-
 // for ScopedVolatileLock
 #include "Lock.h"
 
@@ -53,11 +50,6 @@
 // send the family code then value separated by a space. If you send them in succession Arduino
 // does not respond properly. - LF 20170706
 
-//#define MAX_TAPPERS 4
-//#define HANDSHAKE_TIMEOUT 5
-
-//#define BAUD_RATE 115200
-
 /* =============================================================================
 Global variables
 ============================================================================= */
@@ -65,16 +57,13 @@ Global variables
 bool TRIAL_RUNNING = false;
 
 //NOTE: the current state that we are in (either IDLE or RUN), we begin in the
-//IDEL state to allow ECC to set important parameters (e.g. met.alpha etc.)
+//IDLE state to allow ECC to set important parameters (e.g. met.alpha etc.)
 //-SA 20170706
 uint8_t GEM_CURRENT_STATE = GEM_STATE_IDLE;
 
 // Get ourselves a GEMSound object
 char soundName[ ] = "1.WAV";
 GEMSound sound;
-
-// Get ourselves a reporting object
-GEMReport report;
 
 //// PINS THAT WE RECEIVE INTERRUPTS ON FROM THE TAPPERS
 const uint8_t recPins[GEM_MAX_TAPPERS] = {6, 7, 8, 9};
@@ -84,8 +73,7 @@ Timing variables
 ============================================================================= */
 // Many of these are contained in the Metronome object
 // Variable that contains time of next scheduled metronome event
-//unsigned long scheduledMetronomeTime = 0;
-unsigned long currentTime;
+// unsigned long currentTime;
 
 // Time that the next window ends (met.next + met.getIOI()/2)
 unsigned long windowEnds = 0;
@@ -124,9 +112,9 @@ Metronome met;
 Diagnostic LEDs
 ============================================================================= */
 // flash if interrupt
-int LEDPin = A0;
+// int LEDPin = A0;
 // visual metronome led
-int metronomeLED = A1;
+// int metronomeLED = A1;
 
 /* =============================================================================
 Interupt functions
@@ -164,14 +152,20 @@ Helper functions
 ============================================================================= */
 inline void wire_write(uint8_t tapperid, uint8_t val)
 {
-//    Serial.print("Sending ");
-//    Serial.print(val);
-//    Serial.print(" to tapper ");
-//    Serial.println(tapperid);
+    #ifdef DEBUG
+        Serial.print(F("Sending "));
+        Serial.print(val);
+        Serial.print(F(" to tapper "));
+        Serial.println(tapperid);
+    #endif
+
     Wire.beginTransmission(tapperid); // transmit to device #
     Wire.write(val);                 // sends one byte
     Wire.endTransmission();          // stop transmitting
-//    Serial.println("Done transmitting");
+
+    #ifdef DEBUG
+        Serial.println(F("Done transmitting"));
+    #endif
 }
 /* -------------------------------------------------------------------------- */
 void write_to_tappers(uint8_t val)
@@ -206,18 +200,16 @@ void setup()
     Serial.begin(GEM_SERIAL_BAUDRATE);
 
     // Enable the Wire interface for I2C communication
-    // report.infostr("Enabling I2C");
     Wire.begin(); // metronome does not need address
 
     // Enable PINs for flashing LEDs
-    // report.infostr("Enabling diagnostic LEDs");
-    pinMode(LEDPin, OUTPUT); // Interrupt
-    pinMode(metronomeLED, OUTPUT); // Metronome
+    // pinMode(LEDPin, OUTPUT); // Interrupt
+    // pinMode(metronomeLED, OUTPUT); // Metronome
 
     // Check to see which tappers are connected
-    // report.infostr("Checking for connected tappers");
     for (uint8_t s = 0; s < GEM_MAX_TAPPERS; s++)
     {
+
         //NOTE: because the logic here is so procedural (the handshake
         //interrupt can ONLY be called within a very narrowly define window -
         //i.e. between the call to enableInterrupt() and disableInterrupt()) I
@@ -236,6 +228,13 @@ void setup()
             currTapper = s;
         }
 
+        #ifdef DEBUG
+            Serial.print(F("Checking tapper "));
+            Serial.print(s+1);
+            Serial.print(F(" interrupt on pin "));
+            Serial.println(currPin);
+        #endif
+
         // Enable the interrupt on the pin that we're expecting to receive acknowledgement on
         enableInterrupt(currPin, tapperHandshake, RISING);
 
@@ -249,35 +248,41 @@ void setup()
         // check whether we successfully had tapper communicate on designated pin
         if (tapperIsConnected[currTapper])
         {
-#ifdef DEBUG
-            Serial.print("Found tapper: ");
-            Serial.println(currPin);
-#endif
+            #ifdef DEBUG
+                Serial.print(F("Found tapper: "));
+                Serial.println(currPin);
+            #endif
             // Attach our desired ISR
             enableInterrupt(currPin, registerTap, RISING);
         }
         else
         {
-#ifdef DEBUG
-            Serial.println("Tapper connect failed");
-#endif
+            #ifdef DEBUG
+                Serial.print(F("Tapper "));
+                Serial.print(s+1);
+                Serial.println(F(" connect failed"));
+            #endif
             // flash LED
-            digitalWrite(LEDPin, HIGH);
-            delay(500);
-            digitalWrite(LEDPin, LOW);
+            // digitalWrite(LEDPin, HIGH);
+            // delay(500);
+            // digitalWrite(LEDPin, LOW);
         }
     } // for (int s = 0; s < GEM_MAX_TAPPERS; s++)
 
-#ifdef DEBUG
-    // Report on number of active tappers
-    Serial.print("# tappers: ");
-    Serial.println(numTappers);
-#endif
+    #ifdef DEBUG
+        // Report on number of active tappers
+        Serial.print(F("# tappers: "));
+        Serial.println(numTappers);
+    #endif
 
     // Initialize the sound card
     sound.setupSDCard();
 
     sound.loadByName(soundName);
+    #ifdef DEBUG
+        Serial.println(F("Playing sound ..."));
+        sound.play(); // play the sound
+    #endif
 
     {
         ScopedVolatileLock lock;
@@ -287,9 +292,9 @@ void setup()
         }
     }
 
-#ifdef DEBUG
-    Serial.println("Send 4 then 1 to start");
-#endif
+    #ifdef DEBUG
+        Serial.println(F("Send 4 then 1 to start"));
+    #endif
 } // setup()
 
 //////////////////////////////////////////////////////////////////
@@ -308,29 +313,29 @@ void idle()
         //to keep track of when that is ok on the ECC side (should be simple)
         //we should still use single byte message id codes (i.e. <msg> below)
         // -SA 20170706
-#ifdef DEBUG
-        uint8_t msg = (uint8_t)Serial.parseInt();
-        Serial.print("Rec: ");
-        Serial.println(msg);
-#else
-        uint8_t msg = (uint8_t)Serial.read();
-#endif
+        #ifdef DEBUG
+            uint8_t msg = (uint8_t)Serial.parseInt();
+            Serial.print(F("Rec: "));
+            Serial.println(msg);
+        #else
+            uint8_t msg = (uint8_t)Serial.read();
+        #endif
 
         switch (msg)
         {
             case GEM_STATE_RUN:
-#ifdef DEBUG
-                Serial.println("GEM_STATE_RUN");
-#endif
+                #ifdef DEBUG_SETTINGS
+                    Serial.println(F("GEM_STATE_RUN"));
+                #endif
                 GEM_CURRENT_STATE = GEM_STATE_RUN;
                 break;
 
             case GEM_METRONOME_ALPHA:
                 met.alpha = Serial.parseFloat();
-#ifdef DEBUG
-                Serial.print("Alpha: ");
-                Serial.println(met.alpha);
-#endif
+                #ifdef DEBUG_SETTINGS
+                    Serial.println(F("Alpha: "));
+                    Serial.println(met.alpha);
+                #endif
                 break;
 
             case GEM_METRONOME_TEMPO:
@@ -338,10 +343,10 @@ void idle()
                 //setter function to make sure everything that need to be
                 //updated gets updated -SA 20170706
                 met.setTempo(Serial.parseInt());
-#ifdef DEBUG
-                Serial.print("IOI: ");
-                Serial.println(met.getIOI());
-#endif
+                #ifdef DEBUG_SETTINGS
+                    Serial.print(F("IOI: "));
+                    Serial.println(met.getIOI());
+                #endif
 
                 break;
 
@@ -351,7 +356,13 @@ void idle()
             //case GEM_ERROR:
             //    Serial.write(GEM_CURRENT_ERROR); //0x00 if no error?
             //    break;
-
+            
+            default:
+                #ifdef DEBUG_SETTINGS
+                    Serial.print(F("Unknown: "));
+                    Serial.println(msg);
+                #endif
+                break;
         }
 
     }
@@ -370,22 +381,28 @@ void run()
     // Check whether there is any message from the ECC
     if (Serial.available())
     {
-#ifdef DEBUG
-        uint8_t msg = (uint8_t)Serial.parseInt();
-        Serial.print("Rec: ");
-        Serial.println(msg);
-#else
-        uint8_t msg = (uint8_t)Serial.read();
-#endif
+        #ifdef DEBUG
+            uint8_t msg = (uint8_t)Serial.parseInt();
+            Serial.print(F("Rec: "));
+            Serial.println(msg);
+        #else
+            uint8_t msg = (uint8_t)Serial.read();
+        #endif
         switch (msg)
         {
             case GEM_STOP:
                 TRIAL_RUNNING = false;
                 GEM_CURRENT_STATE = GEM_STATE_IDLE;
+                #ifdef DEBUG
+                    Serial.println(F("GEM_STATE_IDLE"));
+                #endif
                 break;
 
             case GEM_START:
                 TRIAL_RUNNING = true;
+                #ifdef DEBUG
+                    Serial.println(F("GEM_START"));
+                #endif
                 break;
 
             case MUTE_SOUND:
@@ -395,18 +412,20 @@ void run()
             case UNMUTE_SOUND:
                 write_to_tappers(UNMUTE_SOUND);
                 break;
-#ifdef DEBUG
+
             default:
-                Serial.print("Unknown: ");
-                Serial.println(msg);
-#endif
+                #ifdef DEBUG
+                    Serial.print(F("Unknown: "));
+                    Serial.println(msg);
+                #endif
+                break;
         }
     }
 
     if (TRIAL_RUNNING)
     {
         // Get the current time
-        currentTime = millis();
+        unsigned long currentTime = millis();
 
 
         // Did we cross over to a new window?
@@ -507,30 +526,30 @@ void run()
             // Increment our window counter
             window++;
 
-#ifdef DEBUG
-            Serial.print("Schd ");
-            Serial.print(window);
-            Serial.print(": ");
-            Serial.println(met.next);
+            #ifdef DEBUG
+                Serial.print(F("Now: "));
+                Serial.println(currentTime);
 
-            Serial.print("Now: ");
-            Serial.println(currentTime);
-#endif
+                Serial.print(F("Schd "));
+                Serial.print(window);
+                Serial.print(F(": "));
+                Serial.println(met.next);
+            #endif
         } // if (currentTime >= windowEnds)
 
         // Check whether we have passed the scheduled metronome time
         if ((currentTime >= met.next) && !met.played)
         {
-#ifdef DEBUG
-            Serial.println("SND");
-#endif
+            #ifdef DEBUG
+                Serial.println(F("SND"));
+            #endif
             sound.play(); // play the sound
 
             met.played = true; // flag that it has been played
 
-#ifdef DEBUG
-            Serial.println("USND");
-#endif
+            #ifdef DEBUG
+                Serial.println(F("USND"));
+            #endif
         }
     } //if (TRIAL_RUNNING)
 

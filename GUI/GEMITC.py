@@ -105,6 +105,7 @@ class ITC(Thread):
     # --------------------------------------------------------------------------
     # toggle the isdone state to true: effectivly tell IO thread to end
     def set_done(self, val=True):
+        print(f"Setting done {val}")
         self.done_lock.acquire()
         self.isdone = val
         self.done_lock.release()

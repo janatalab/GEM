@@ -10,7 +10,6 @@ Implementation of adaptive metronome class
 #include "Arduino.h"
 #include "GEMConstants.h"
 #include "GEM.h"
-#include "GEMreport.h"
 #include "Lock.h"
 ///////////////////////////////////////////////////////////////////
 
@@ -105,10 +104,10 @@ int Metronome::scheduleNext(volatile int asynchArray[], volatile bool isActive[]
             asynchAdjust = 0;
         }
 
-#ifdef DEBUG
-        Serial.print("adj: ");
-        Serial.println(asynchAdjust);
-#endif
+        #ifdef DEBUG
+            Serial.print(F("adj: "));
+            Serial.println(asynchAdjust);
+        #endif
 
     }
 
