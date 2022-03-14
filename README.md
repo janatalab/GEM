@@ -3,7 +3,7 @@ This is a repository for code associated with the NAKFI Groove Enhancement Machi
 
 The GEM consists of a set of Arduinos that communicate with each other and with a computer running experiment control software written in Python.
 
-There is one "master" or "metronome" Arduino that functions as the adaptive metronome and which communicates with the computer. A force-sensitive resistor (FSR) is connected to each of the other Arduinos, the "tapper" Arduinos, utilizing a scheme first described by Schulz & van Vugt (2016). The "tapper" Arduinos communicate tap events via interrupts to the metronome Arduino which adjusts the time of the next metronome tone based on the individual tap times and parameters that have been communicated from the experiment control computer.
+The "Metronome" Arduino functions as the adaptive metronome and which communicates with the computer. A force-sensitive resistor (FSR) is connected to each of the other Arduinos, the "Tapper" Arduinos, utilizing a scheme first described by Schulz & van Vugt (2016). The Tapper Arduinos communicate tap events via interrupts to the Metronome Arduino which adjusts the time of the next metronome tone based on the individual tap times and parameters that have been communicated from the experiment control computer (ECC).
 
 Further instructions and project information can be found in the Wiki.
 
