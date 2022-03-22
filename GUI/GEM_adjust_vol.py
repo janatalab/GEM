@@ -26,6 +26,7 @@ from GEMIO import get_metronome_port
 # This is used to search for the correct port information
 # metronome_serial_num = "9543731333535131D171"
 metronome_serial_num = "95536333830351317171"
+# metronome_serial_num = "9553034373435131F071"
 
 # Define experimental presets
 presets = {
