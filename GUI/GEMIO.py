@@ -7,24 +7,17 @@ import codecs, struct
 
 import serial.tools.list_ports
 
-import pdb
 
 # ==============================================================================
 # convert a python int to a bytestring
 def uint64(n):
-    # make sure we add the bytes in low-high order (this has been tested
-    # in one context but needs further testing)
-    nstr = str()
-    for k in range(0, 64, 8):
-        nstr += chr((n >> k) & 0xff)
-    return nstr
+    return n.to_bytes(8,byteorder='little')
+
 # ==============================================================================
 # parse a string containing a c/c++ uinsigned int literal
 def parse_uint(val):
     #uint -> char, all other data type can stay as strings
     if val[0:2] == "0x":
-        # v = val[2:].decode("hex")  # Python 2
-        # v = val[2:]  # Python 3
         v = codecs.decode(val[2:],"hex")
     else:
         v = val
@@ -125,12 +118,15 @@ class GEMDataFile:
 
         hdr_str = json.dumps(hdr_dict)
         nel = len(hdr_str)
+        nel_uint64 = uint64(nel)
 
         # Write the length of the header dict as an 8 byte unsigned int
-        # self._io.write(uint64(nel)) # Python 2
-        self._io.write(uint64(nel).encode())  # Python 3
-        # self._io.write(hdr_str)  # Python 2
-        self._io.write(hdr_str.encode())  # Python 3
+        self._io.write(nel_uint64) 
+
+        # Write the header
+        hdr_offset = self._io.tell()
+        print(f"Writing header of length {nel} ({nel_uint64}) at {hdr_offset}: \n{hdr_str}")
+        self._io.write(hdr_str.encode())
 
     def write_file_header(self, d, nruns):
         self.reopen()
@@ -138,19 +134,17 @@ class GEMDataFile:
         self.write_header(-1, d)
 
         # initialize a block of run_header offsets with 64bit 0s
-        print("Writing idx_map @ {}".format(self._io.tell()))
         self.idx_map_offset = self._io.tell()
-        # self._io.write('\x00' * 8 * nruns)   # Python 2
-        s = '\x00' * 8 * nruns   # Python 3
-        self._io.write(s.encode()) # Python 3
+        print("Writing idx_map @ {}".format(self.idx_map_offset))
+        
+        self._io.write(bytes(8*nruns))
 
     def write_run_offset(self, krun, offset):
         self.reopen()
         ptr = self._io.tell()
-        print("Writing run {} offset at: {}".format(krun, self.idx_map_offset + (krun * 8)))
+        print("Writing run {} offset ({}) at: {}".format(krun+1, offset, self.idx_map_offset + (krun * 8)))
         self._io.seek(self.idx_map_offset + (krun * 8), 0)
-        # self._io.write(uint64(offset))   # Python 2
-        self._io.write(uint64(offset).encode())   # Python 3
+        self._io.write(uint64(offset))
         self._io.seek(ptr, 0)
 
 # ==============================================================================
@@ -271,23 +265,9 @@ class GEMAcquisition(Thread):
             io.send(self.tempo)
             sleep(0.100)
 
-            # sleep(3) # pj added
-            # n = io.available()
-            # if n > 0:
-            #     print(io.com.read(n))
-            # else:
-            #     print("Acknowledgment tempo receipt not received")
-
             self.itc.send_message("data_viewer", "Sending alpha to arduino: " + self.alpha[1:].decode('utf-8'))
             io.send(self.alpha)
             sleep(0.100)
-
-            # sleep(3) # pj added
-            # n = io.available()
-            # if n > 0:
-            #     print(io.com.read(n))
-            # else:
-            #     print("Acknowledgment alpha receipt not received")
 
             #
             # # TODO: wait for metronome to tell us it's ready
@@ -295,13 +275,6 @@ class GEMAcquisition(Thread):
 
             # tell the metronome to start the experiment
             io.send(self.constants["GEM_STATE_RUN"])
-
-            # sleep(5) # pj added
-            # n = io.available()
-            # if n > 0:
-            #     print(io.com.read(n))
-            # else:
-            #     print("Acknowledgment of GEM_STATE_RUN receipt not received")
 
             # notify anyone registered to receive GEM_START signals
             # no message is needed (defaults to "")

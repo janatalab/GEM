@@ -138,10 +138,10 @@ function tostring(x::GEMPacket)
     return "$(x.click_time), " * join(x.async, ", ") * ", $(x.adjust)"
 end
 # ---------------------------------------------------------------------------- #
-function read_run(file::GEMDataFile, k::Integer=1)
-    hdr, offset = read_run_header(file, k)
+function read_run(file::GEMDataFile, run::Integer=1)
+    hdr, offset = read_run_header(file, run)
     if offset > 0
-        data = Vector{GEMPacket}(file.nwin)
+        data = Vector{GEMPacket}(undef,file.nwin)
         open(file.path, "r") do io
             seek(io, offset)
 
@@ -170,7 +170,6 @@ function read_run_header(file::GEMDataFile, k::Integer=1)
             seek(io, offset)
             hdr_length = read(io, UInt64)
             println("Header length: ", hdr_length)
-            #hdr = JSON.parse(String(read(io, UInt8, hdr_length)))
 
             hdr = JSON.parse(String(read(io, hdr_length)))
             return hdr, position(io)
@@ -186,7 +185,7 @@ function read_packet(io::IOStream)
         read(io, UInt8),            #data-transfer-protocol id
         read(io, UInt16),           #window number
         read(io, UInt32),           #click_time
-        read(io, Int16, MAX_TAPPERS),#asynchronies
+        read!(io, Vector{Int16}(undef, MAX_TAPPERS)),#asynchronies
         read(io, Int16)             #next adjustment factor
     )
 end

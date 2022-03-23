@@ -55,7 +55,7 @@ presets = {
     "repeats": 3, 
 
     # number of metronome clicks
-    "windows": 15, 
+    "windows": 10, 
 
     # Future releases will allow for all variations on hearing self, metronome, and others in the experiment.
     "audio_feedback": ["hear_metronome_and_self"], 
