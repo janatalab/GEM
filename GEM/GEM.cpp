@@ -10,7 +10,6 @@ Implementation of adaptive metronome class
 #include "Arduino.h"
 #include "GEMConstants.h"
 #include "GEM.h"
-#include "GEMreport.h"
 #include "Lock.h"
 ///////////////////////////////////////////////////////////////////
 
@@ -62,14 +61,14 @@ void Metronome::setIOI()
 }
 
 int Metronome::scheduleNext(volatile int asynchArray[], volatile bool isActive[],
-    uint8_t numSlaves, uint8_t heuristic)
+    uint8_t numTappers, uint8_t heuristic)
 {
     int asynchSum = 0;
     int numResponse = 0;
     int asynchAdjust;
 
     // Accumulate
-    for (uint8_t s = 0; s < numSlaves; s++)
+    for (uint8_t s = 0; s < numTappers; s++)
     {
         //NOTE: the global volatile arrays (currAsynch etc.) are passed by
         //address (i.e. are pointers within this function) so we need to
@@ -105,10 +104,10 @@ int Metronome::scheduleNext(volatile int asynchArray[], volatile bool isActive[]
             asynchAdjust = 0;
         }
 
-#ifdef DEBUG
-        Serial.print("adj: ");
-        Serial.println(asynchAdjust);
-#endif
+        #ifdef DEBUG
+            Serial.print(F("adj: "));
+            Serial.println(asynchAdjust);
+        #endif
 
     }
 

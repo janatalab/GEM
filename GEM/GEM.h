@@ -46,13 +46,13 @@ public:
     // volatile qualified -SA 20170628
     volatile unsigned long next;
 
-    //NOTE: changed numSlaves and heuristic to 1-byte as 0-255 seems more than
+    //NOTE: changed numTappers and heuristic to 1-byte as 0-255 seems more than
     //enough for both (both are defines in GEMConstants which is currently
     //included in GEM.cpp so we don't actually need to pass them at all)
     //-SA 20170702
     // Functions
     int scheduleNext(volatile int asynchArray[], volatile bool isActive[],
-        uint8_t numSlaves, uint8_t heuristic);
+        uint8_t numTappers, uint8_t heuristic);
 
     //NOTE: setter/getter methods for ioi and bpm
     void setTempo(int);

@@ -1,4 +1,4 @@
-//////////////////////// SLAVE TAPPER ////////////////////////
+//////////////////////// TAPPER ////////////////////////
 //
 // 18Mar2017 - Petr Janata - essentially rebuilding from scratch, keeping some
 //             portions of previous code
@@ -11,7 +11,7 @@
 
 // WaveHC for the Waveshield which handles the loading and playing of the sounds
 // 18Mar2017 PJ - we should really create a GEMSound class in GEM.h so that we don't have to
-// include this code in both the Master and Slave sketches
+// include this code in both the Metronome and Tapper sketches
 
 // Get all our constants
 #include <GEMConstants.h>
@@ -19,34 +19,19 @@
 // GEM Sound handling stuff
 #include <GEMsound.h>
 
-// Reporting interface
-#include <GEMreport.h>
-
 ////////// DEFINES //////////
-// Set the address for this slave.
-// This needs to be unique to each tapper (slave), and must therefore
-// be changed as each sketch is compiled and uploaded to each slave device
-#define ADDRESS 3
-
-
-
-// put error messages in flash memory
-// 18Mar2017 PJ - we're going to send error codes to the Experiment Control Computer (ECC)
-// on the fly, so there is no need to store messages in flash memory.
-// We should create a GEMError class that defines all of the constants
-//#define error(msg) error_P(PSTR(msg))
+// Set the address for this tapper.
+// This needs to be unique to each tapper (tapper), and must therefore
+// be changed as each sketch is compiled and uploaded to each tapper device
+#define ADDRESS 4
 
 /////////////////////////////////
 
 ////////////// INITIALIZE GLOBAL VARIABLES  //////////////
 // 18Mar2017 PJ - ultimately, the following parameters should be passed in
-//                via the Master during initialization:
+//                via the Metronome during initialization:
 //  PLAY_TIME - how long should a song play for
 //  FSRThresh - the FSR value that should be exceeded in order to register a tap (important for preventing double taps)
-//  DEBUG - if True, then this device will send debugging messages via the Serial interface
-
-
-bool DEBUG = false;
 
 // Variables specifying FSR input and output
 // These variables should probably also be stored in an FSR object
@@ -58,18 +43,11 @@ uint8_t sendPin = 6;
 
 
 // the FSR value that should be exceeded in order to register a tap
-// 20 in Schultz and van Vogt
-int FSRThresh = 300; // officially fixed this on 20181004 - LF + PJ + oscilloscope
-//int FSRThresh = 40; // per convo with Petr 20180424 - LF
-// Formerly all FSRs were at 30
-// Going to change back to 30 because seeing weird issues of phantom taps.. - LF 20180423
+// Note that this may vary by FSR and might require some experimentation.
+// The danger in setting it too low is that errant tap events might be triggered
 
-// each FSR is unique -- there is not a one-threshold-fits-all solution
-// LF - 20180419
-// Slave 1 FSR works well at 80
-// Slave 2 FSR works well at 15
-// Slave 3 FSR works well at 300
-// Slave 4 FSR works well at 530
+int FSRThresh = 300; // officially fixed this on 20181004 - LF + PJ + oscilloscope
+int tapDoneFSRThresh = 10; // values between 0 and this value will reset ability of tap to generate a sound
 
 // Timing parameters
 uint32_t currTime; // stores time at which the FSR exceeds threshold
@@ -88,11 +66,7 @@ GEMSound sound;
 
 bool muteSound = false;
 
-//#define PLAY_TIME 45
 /// END OF SOUND STUFF ///
-
-// Get ourselves a reporting object
-GEMReport report;
 
 ////// FSR Stuff: //////
 int currVal = 0; // stores value of FSR current state
@@ -107,6 +81,11 @@ void setup() {
   Serial.begin(GEM_SERIAL_BAUDRATE);  // begin arduino at [BaudRate]
 
   //I2C Setup
+  #ifdef DEBUG
+    Serial.print(F("Joining I2C bus with address "));
+    Serial.println(ADDRESS);
+  #endif
+
   Wire.begin(ADDRESS); // join i2c bus with address #
   Wire.onReceive(receiveEvent); // register event
 
@@ -118,10 +97,18 @@ void setup() {
   sound.setupSDCard();
 
   // Load a sound file
-  if (DEBUG) report.infostr("Loading sound file");
-  sound.loadByName(soundName);
-  if (DEBUG) report.infostr("Done loading sound file");
+  #ifdef DEBUG
+    Serial.print(F("Loading sound file "));
+    Serial.println(soundName);
+  #endif
 
+  sound.loadByName(soundName);
+
+  #ifdef DEBUG
+    Serial.println(F("Done loading sound file"));
+  #endif
+
+  sound.play();
 }
 //////////////////////////////////////////////////////////////////
 /////////////// END OF ARDUINO Setup() FUNCTION //////////////////
@@ -163,13 +150,17 @@ void loop() {
         tapDone = false;
 
         // Send any non-essential messages
-        if (DEBUG) Serial.println(currVal); // print the FSR value, for debug
+        #ifdef DEBUG
+          Serial.println(currVal); // print the FSR value, for debug
+        #endif
       } // end if (prevInterruptTime - currTime > minITI)
-    } else if (!currVal) {
+    } else if (currVal <= tapDoneFSRThresh) {
       // If the value of the FSR returns to zero, declare the tap completely done,
       // thus enabling a new tap and associated sound
       if (!tapDone){
-        if (DEBUG) Serial.println("");
+        #ifdef DEBUG
+          Serial.println(F(""));
+        #endif
       }
       tapDone = true;
     } // end if (val >= FSRThresh)
@@ -188,15 +179,19 @@ void loop() {
 void receiveEvent(int howMany){
   int requestCode;
 
-  // Figure out what we need to do based on the message identifier code
-  if (DEBUG) Serial.println("Received Wire msg");
+  #ifdef DEBUG
+    Serial.println(F("Received Wire msg"));
+  #endif
 
+  // Figure out what we need to do based on the message identifier code
   requestCode = Wire.read();
   switch (requestCode)
   {
     case GEM_REQUEST_ACK:
       // Turn around the handshake request by pulsing the digital pin
-      if (DEBUG) Serial.println("Performing handshake");
+      #ifdef DEBUG
+        Serial.println(F("Performing handshake"));
+      #endif
 
       digitalWrite(sendPin, HIGH);
       delay(GEM_WRITE_DUR_MS);
@@ -214,14 +209,12 @@ void receiveEvent(int howMany){
       break;
 
     default:
-      Serial.print("Slave ");
+      Serial.print(F("Tapper "));
       Serial.print(ADDRESS);
-      Serial.print(" unhandled request code: ");
+      Serial.print(F(" unhandled request code: "));
       Serial.println(requestCode);
   }
 }
-
-//void receiveEvent(int howMany) {
 
 
 ////////////////////////////////////////////////////////

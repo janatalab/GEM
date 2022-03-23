@@ -19,8 +19,6 @@
 // Waveshield utilites
 #include "WaveUtil.h"
 
-#include "GEMreport.h"
-
 // Define the GEMSound class
 class GEMSound {
 public:

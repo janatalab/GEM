@@ -4,7 +4,7 @@ import JSON
 using FileOps
 export convert_file, convert_files, GEMDataFile, read_run
 
-const MAX_SLAVES = 0x04
+const MAX_TAPPERS = 0x04
 # ---------------------------------------------------------------------------- #
 struct GEMDataFile
     path::String
@@ -25,10 +25,18 @@ end
 function GEMDataFile(filepath::String)
     open(filepath, "r") do io
         hdr_length = read(io, UInt64)
-        hdr = JSON.parse(String(read(io, UInt8, hdr_length)))
+        println("Header length: ", hdr_length)
+
+        # hdr = JSON.parse(String(read(io, UInt8, hdr_length)))
+        hdr = JSON.parse(String(read(io, hdr_length)))
+        println("Header: ", hdr)
 
         nrun = length(hdr["metronome_alpha"]) * Int64(hdr["repeats"])
-        idx_map = read(io, UInt64, nrun)
+        println("#runs: ", nrun)
+
+        # idx_map = read(io, UInt64, nrun)
+        idx_map = reinterpret(UInt64, read(io, nrun*sizeof(UInt64)))
+        println("Run index map: ", idx_map)
 
         return GEMDataFile(filepath, hdr, idx_map, nrun, Int(hdr["windows"]))
     end
@@ -92,7 +100,7 @@ function convert_file(ifile::String, ofile::String)
     hdrs = Vector{Dict}()
 
     open(ofile, "w") do io
-        labels = join(["\"async_$(x)\"" for x in 1:MAX_SLAVES], ", ")
+        labels = join(["\"async_$(x)\"" for x in 1:MAX_TAPPERS], ", ")
         write(io,
             """
             \"run\", \"alpha\", \"window\", \"click_time\", $(labels), \"next_adjust\"
@@ -130,10 +138,10 @@ function tostring(x::GEMPacket)
     return "$(x.click_time), " * join(x.async, ", ") * ", $(x.adjust)"
 end
 # ---------------------------------------------------------------------------- #
-function read_run(file::GEMDataFile, k::Integer=1)
-    hdr, offset = read_run_header(file, k)
+function read_run(file::GEMDataFile, run::Integer=1)
+    hdr, offset = read_run_header(file, run)
     if offset > 0
-        data = Vector{GEMPacket}(file.nwin)
+        data = Vector{GEMPacket}(undef,file.nwin)
         open(file.path, "r") do io
             seek(io, offset)
 
@@ -155,12 +163,15 @@ function read_run_header(file::GEMDataFile, k::Integer=1)
     @assert(k <= file.nrun, "Invalid run number!")
 
     offset = file.idx_map[k]
+    println("Reading header for run ", k, " at offset ", offset)
 
     if offset > 0
         open(file.path, "r") do io
             seek(io, offset)
             hdr_length = read(io, UInt64)
-            hdr = JSON.parse(String(read(io, UInt8, hdr_length)))
+            println("Header length: ", hdr_length)
+
+            hdr = JSON.parse(String(read(io, hdr_length)))
             return hdr, position(io)
         end
     else
@@ -174,7 +185,7 @@ function read_packet(io::IOStream)
         read(io, UInt8),            #data-transfer-protocol id
         read(io, UInt16),           #window number
         read(io, UInt32),           #click_time
-        read(io, Int16, MAX_SLAVES),#asynchronies
+        read!(io, Vector{Int16}(undef, MAX_TAPPERS)),#asynchronies
         read(io, Int16)             #next adjustment factor
     )
 end

@@ -1,6 +1,6 @@
 # GEM data transfer protocols
 
-## Master -> ECC
+## Metronome -> ECC
     * 0: data transfer protocol id
     * 1-2: window number (uint16)
     * 3-6: scheduled time of the metronome click (uint32)

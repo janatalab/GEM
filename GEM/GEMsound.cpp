@@ -6,7 +6,6 @@
 // 18Mar2017 Petr Janata - started code
 
 #include "Arduino.h"
-#include "GEMreport.h"
 #include "GEMsound.h"
 
 // GEMSound constructor
@@ -21,7 +20,7 @@ void GEMSound::play(void){
 void GEMSound::setupSDCard(void){
 
 #ifdef DEBUG
-  Serial.println("Init SD card");
+  Serial.println(F("Init SD card"));
 #endif
 
   // WAVE HC card init TODO

@@ -3,24 +3,22 @@ from time import time, sleep
 import serial
 import json
 import re
+import codecs, struct
 
 import serial.tools.list_ports
+
 
 # ==============================================================================
 # convert a python int to a bytestring
 def uint64(n):
-    # make sure we add the bytes in low-high order (this has been tested
-    # in one context but needs further testing)
-    nstr = str()
-    for k in range(0, 64, 8):
-        nstr += chr((n >> k) & 0xff)
-    return nstr
+    return n.to_bytes(8,byteorder='little')
+
 # ==============================================================================
 # parse a string containing a c/c++ uinsigned int literal
 def parse_uint(val):
     #uint -> char, all other data type can stay as strings
     if val[0:2] == "0x":
-        v = val[2:].decode("hex")
+        v = codecs.decode(val[2:],"hex")
     else:
         v = val
     return v
@@ -49,18 +47,25 @@ def parse_constants(hfile):
 # ==============================================================================
 # Function to get the relevant USB port
 #
-# Define a unique identifier for the usb device used to connect the master
+# Define a unique identifier for the usb device used to connect the metronome
 # Arduino. This could be something like "Arduino", though on our UC Davis
 # GEM system, we use a usb adapter from the Arduino to the computer that has an
 # ID of "Generic CDC".
 
-def get_master_port(usb_adapter="Generic CDC"):
+def get_metronome_port(usb_adapter="Generic CDC", serial_num=None):
     ports = list(serial.tools.list_ports.comports())
     for p in ports:
-        # Check for ID of usb adapter we use to connect Arduino
-        if usb_adapter in p[1]:
-            pid = str(p)
-            return pid.split(' ')[0]
+        # If we've specified the serial number we are looking for, use that
+        if serial_num:
+            m = re.search(r'SER='+serial_num, p.hwid)
+            if m:
+                return p.device
+
+        else:
+            # Check for ID of usb adapter we use to connect Arduino
+            if usb_adapter in p[1]:
+                pid = str(p)
+                return pid.split(' ')[0]
 
 
 # ==============================================================================
@@ -113,10 +118,15 @@ class GEMDataFile:
 
         hdr_str = json.dumps(hdr_dict)
         nel = len(hdr_str)
+        nel_uint64 = uint64(nel)
 
         # Write the length of the header dict as an 8 byte unsigned int
-        self._io.write(uint64(nel))
-        self._io.write(hdr_str)
+        self._io.write(nel_uint64) 
+
+        # Write the header
+        hdr_offset = self._io.tell()
+        print(f"Writing header of length {nel} ({nel_uint64}) at {hdr_offset}: \n{hdr_str}")
+        self._io.write(hdr_str.encode())
 
     def write_file_header(self, d, nruns):
         self.reopen()
@@ -124,14 +134,15 @@ class GEMDataFile:
         self.write_header(-1, d)
 
         # initialize a block of run_header offsets with 64bit 0s
-        print("Writing idx_map @ {}".format(self._io.tell()))
         self.idx_map_offset = self._io.tell()
-        self._io.write('\x00' * 8 * nruns)
+        print("Writing idx_map @ {}".format(self.idx_map_offset))
+        
+        self._io.write(bytes(8*nruns))
 
     def write_run_offset(self, krun, offset):
         self.reopen()
         ptr = self._io.tell()
-        print("Writing run {} offset at: {}".format(krun, self.idx_map_offset + (krun * 8)))
+        print("Writing run {} offset ({}) at: {}".format(krun+1, offset, self.idx_map_offset + (krun * 8)))
         self._io.seek(self.idx_map_offset + (krun * 8), 0)
         self._io.write(uint64(offset))
         self._io.seek(ptr, 0)
@@ -197,6 +208,7 @@ class GEMIOManager:
 
             def send(self, msg):
                 self.com.write(msg)
+                print(f"Sent {msg}")
 
             def flush(self):
                 self.com.flush()
@@ -237,9 +249,9 @@ class GEMAcquisition(Thread):
 
         self.windows = presets["windows"]
 
-        self.tempo = self.constants["GEM_METRONOME_TEMPO"] + str(int(presets["metronome_tempo"]))
+        self.tempo = self.constants["GEM_METRONOME_TEMPO"] + bytes(str(int(presets["metronome_tempo"])), 'utf-8') # Python 3
 
-        self.alpha = self.constants["GEM_METRONOME_ALPHA"] + str(alpha)
+        self.alpha = self.constants["GEM_METRONOME_ALPHA"] + bytes(str(alpha),'utf-8') # Python 3
 
     # override Thread.run()
     def run(self):
@@ -249,29 +261,31 @@ class GEMAcquisition(Thread):
             io.com.readline()
 
             # send relevant parameters to arduino
-            self.itc.send_message("data_viewer", "Sending tempo to arduino: " + self.tempo[1:])
+            self.itc.send_message("data_viewer", "Sending tempo to arduino: " + self.tempo[1:].decode('utf-8'))
             io.send(self.tempo)
             sleep(0.100)
 
-            self.itc.send_message("data_viewer", "Sending alpha to arduino: " + self.alpha[1:])
+            self.itc.send_message("data_viewer", "Sending alpha to arduino: " + self.alpha[1:].decode('utf-8'))
             io.send(self.alpha)
             sleep(0.100)
+
             #
-            # # TODO: wait for master to tell us it's ready?
+            # # TODO: wait for metronome to tell us it's ready
             #
 
-            # tell the master to start the experiment
+            # tell the metronome to start the experiment
             io.send(self.constants["GEM_STATE_RUN"])
 
             # notify anyone registered to receive GEM_START signals
             # no message is needed (defaults to "")
             self.itc.send_message("run_start")
-
             io.send(self.constants["GEM_START"])
 
             # track bytes received for debugging
             total = 0
-            expected = 17 * self.windows #self.constants["GEM_PACKET_SIZE"] * self.windows
+            expected = int(self.constants["GEM_PACKET_SIZE"]) * self.windows
+
+            print(f"[INFO]: Expecting {expected} bytes total")
 
             tstart = time()
             done = self.itc.check_done()
@@ -292,10 +306,12 @@ class GEMAcquisition(Thread):
 
                     # update byte count
                     total += n
+                    # print(f"[INFO]: {total} bytes received so far")
 
+                # Check for an abort
                 done = self.itc.check_done()
 
             io.send(self.constants["GEM_STOP"])
 
-            print("[INFO]: Received {} bytes of data during this run".format(total))
+            print(f"[INFO]: Received {total} bytes of data during this run")
             print("IO thread terminated")

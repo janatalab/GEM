@@ -8,17 +8,17 @@
 # LF TODO:
 # Write out alpha value on each run to .gdf file; also need to write individual
 # run headers to .json file
-# Implement Error handling on master side (e.g. couldn't find audio file)
+# Implement Error handling on metronome side (e.g. couldn't find audio file)
 # --- not a huge priority
 # Implement audio feedback conditions
 # --- send message to experimenter about what to do
-# Set slave sound from ECC
+# Set tapper sound from ECC
 # --- this should wait until v2
 '''
 
-import Tkinter
-from Tkinter import Tk, Label, Button, Entry, StringVar, Frame, OptionMenu, Text
-from tkMessageBox import showerror, askyesno
+import tkinter
+from tkinter import Tk, Label, Button, Entry, StringVar, Frame, OptionMenu, Text
+from tkinter.messagebox import showerror, askyesno
 from threading import Timer
 from datetime import date, datetime
 from copy import copy
@@ -26,6 +26,10 @@ import numpy as np
 import time
 import os
 import re
+import requests
+import json
+
+import pdb
 
 from GEMIO import GEMDataFile, GEMAcquisition
 from GEMITC import ITC
@@ -66,7 +70,7 @@ class GEMGUIComponent(Frame):
             col = 0
             for (item, tag) in zip(items, tags):
                 self.components[tag] = item
-                item.grid(row=self.krow, column=col, pady = 3, sticky="NW")
+                item.grid(row=self.krow+1, column=col, pady = 3, sticky="NW")
                 col += 1
 
             self.krow += 1
@@ -115,11 +119,11 @@ class TextBoxGroup(Frame):
         self.resp.set(txt)
 
     def disable(self):
-        #self.entry["state"] = Tkinter.DISABLED
+        #self.entry["state"] = tkinter.DISABLED
         self.entry["state"] = "readonly"
 
     def enable(self):
-        self.entry["state"] = Tkinter.NORMAL
+        self.entry["state"] = tkinter.NORMAL
 
 # ==============================================================================
 # class to create text (left) and button (right)
@@ -153,11 +157,11 @@ class ButtonGroup(Frame):
 
     def disable(self, label):
         if label in self.labels:
-            self.change_state(self.labels.index(label), Tkinter.DISABLED)
+            self.change_state(self.labels.index(label), tkinter.DISABLED)
 
     def enable(self, label):
         if label in self.labels:
-            self.change_state(self.labels.index(label), Tkinter.NORMAL)
+            self.change_state(self.labels.index(label), tkinter.NORMAL)
 
     def change_state(self, k, state):
         self.btn[k]["state"] = state
@@ -171,7 +175,7 @@ class DataViewer(GEMGUIComponent):
         self.set_title("Data Viewer")
 
         dv = Text(self, height=20, width=45, borderwidth=2)
-        dv.insert(Tkinter.INSERT,
+        dv.insert(tkinter.INSERT,
         "Hello!\n\nSubject id format:\n{} followed by the subject's initials and a digit if needed.\n\nData will appear here...".format(parent.hst)
         )
         dv['state'] = 'disabled'
@@ -191,7 +195,7 @@ class DataViewer(GEMGUIComponent):
     def draw(self):
         # delete what is in data viewer now
         self["dv"]["state"] = "normal"
-        self["dv"].delete(1.0, Tkinter.END)
+        self["dv"].delete(1.0, tkinter.END)
 
         # write to data viewer
         self["dv"].insert("end", self.buffer)
@@ -206,7 +210,8 @@ class DataViewer(GEMGUIComponent):
             self.buffer = self.buffer[self.buffer.find('\n')+1:]
 
         self.nline += 1
-        self.buffer += msg
+        # self.buffer += msg
+        self.buffer += str(msg) # Python 3
 
         if not self.buffer.endswith('\n'):
             self.buffer += '\n'
@@ -223,7 +228,7 @@ class ExperimentControl(GEMGUIComponent):
         self.set_title("Experiment Control Panel")
 
         # Start and Escape buttons
-        spec = {"Start": self.start_run, "Abort": self.abort_run}
+        spec = {"Start Run": self.start_run, "Abort Run": self.abort_run}
         self.add_row("ss", ButtonGroup(self, spec, 39))
 
         # Time remaining in run countdown
@@ -255,21 +260,36 @@ class ExperimentControl(GEMGUIComponent):
         pat = re.compile(r"^\d{6}[a-z]{2,3}\d?$")
 
         ids = self.parent.basic_info.get_subjids()
+        pad_ids = self.parent.basic_info.get_padids()
+
         k = 1
         for id in ids:
             if not id:
                 showerror("Missing Subject ID", "Please enter an ID for all subjects")
                 return False
 
-            if pat.match(id) is None:
-                hst = self.parent.hst
-                bi = self.parent.basic_info
-                bi["subjid-" + str(k)].set_text(hst)
+            if not self.parent.use_pyensemble:
+                if pat.match(id) is None:
+                    hst = self.parent.hst
+                    bi = self.parent.basic_info
+                    bi["subjid-" + str(k)].set_text(hst)
 
-                showerror("Invalid Subject ID", "Please append the subject's initials to the number: '" + hst + "'")
+                    showerror("Invalid Subject ID", "Please append the subject's initials to the number: '" + hst + "'")
+                    return False
+
+        # Make sure we have pad IDs
+        unique_padids = []
+        for p in pad_ids:
+            if not p:
+                showerror("Missing Pad ID", "Please enter a pad for all subjects")
                 return False
 
-            k += 1
+            if p not in unique_padids:
+                unique_padids.append(p)
+
+        if len(pad_ids) != len(unique_padids):
+            showerror("Non-unique pad IDs", "Please enter a unique pad# for each subject")
+            return False
 
         return True
 
@@ -278,6 +298,11 @@ class ExperimentControl(GEMGUIComponent):
 
         if not self.check_user_input():
             return
+
+        if self.parent.use_pyensemble:
+            if not self.parent.group_session.pyensemble["initialized_experiment"]:
+                showerror("PyEnsemble Error","Experiment not initialized!")
+                return
 
         # if this is the first run, init the data file and write the file header
         if self.counter == self.nruns:
@@ -297,14 +322,31 @@ class ExperimentControl(GEMGUIComponent):
         # Get current run number
         krun = self.nruns - self.counter
 
-        # write run header
-        data_file.write_header(krun,
-            {
-                "run_number": krun,
+        # Put our trial parameters into a dictionary
+        params = {
+                "run_number": krun+1,
                 "start_time": get_time(),
                 "alpha": self.parent.alphas[krun]
             }
-        )
+
+        # If connected to PyEnsemble, initialize the trial
+        if self.parent.use_pyensemble:
+            # Initialize the trial
+            initialized = self.parent.group_session.initialize_trial(params)
+
+            if not initialized:
+                return
+
+            # Pause to give clients a chance to update and prepare for the trial
+            # Should probably make this a preset somewhere, but for now use 2.5 seconds
+            pre_start_pause = 2.5
+            time.sleep(pre_start_pause)
+
+            # Signal to PyEnsemble that we are in the running state
+            self.parent.group_session.start_trial()
+
+        # write run header
+        data_file.write_header(krun, params)
 
         # the actual IO thread
         self.acq = GEMAcquisition(data_file,
@@ -342,6 +384,7 @@ class ExperimentControl(GEMGUIComponent):
     # --------------------------------------------------------------------------
     def clean_up(self):
         print("Asking IO thread to terminate")
+        print(f"Running: {self.running}")
         if self.running:
             self.acq.join()
             self.timer.cancel()
@@ -353,9 +396,14 @@ class ExperimentControl(GEMGUIComponent):
 
             self.running = False
 
+            if self.parent.use_pyensemble:
+                self.parent.group_session.end_trial()
+
     # --------------------------------------------------------------------------
     def end_run(self):
+        # self.parent.itc.set_done(True) # pj added
         self.clean_up()
+
         self.counter -= 1
         self["runsleft"].set_text(str(self.counter))
 
@@ -389,24 +437,44 @@ class BasicInfo(GEMGUIComponent):
     def __init__(self, parent, nsubj):
         GEMGUIComponent.__init__(self, parent, 1)
 
-        # Heading for this componenet of GUI
+
+        # Heading for this component of GUI
         self.set_title("Basic Information")
 
-        # Text box to enter experimenter initials
-        self.add_row("experimenter", TextBoxGroup(self, "Experimenter ID:", 9))
+        if not parent.use_pyensemble:
+            # Text box to enter experimenter initials
+            self.add_row("experimenter", TextBoxGroup(self, "Experimenter ID:", 9))
 
-        hrs = hours_since_trump()
+            # Add subject text boxes
+            hrs = hours_since_trump()
+            for k in range(0, nsubj):
+                id_str = str(k+1)
 
-        for k in range(0, nsubj):
-            id = str(k+1)
-            self.add_row("subjid-" + id, TextBoxGroup(self, "Subject " + id + " ID:", 12, hrs))
+                subid_id = "subjid-" + id_str
+                subid_tbg = TextBoxGroup(self, "Subject " + id_str + " ID:", 12, hrs)
 
-        self.nsubj = nsubj
+                padid_id = subid_id + "-pad"
+                padid_tbg = TextBoxGroup(self, "Pad#:", 1, k+1)
+
+                self.add_row([subid_id, padid_id], [subid_tbg, padid_tbg])
+
+            self.nsubj = nsubj
+        else:
+            self.nsubj = 0
 
     def get_subjids(self):
         ids = list()
-        for k in range(0, self.nsubj):
-            ids.append(self["subjid-" + str(k+1)].get_text())
+        if self.nsubj:
+            for k in range(0, self.nsubj):
+                ids.append(self["subjid-" + str(k+1)].get_text())
+
+        return ids
+
+    def get_padids(self):
+        ids = list()
+        if self.nsubj:
+            for k in range(0, self.nsubj):
+                ids.append(self["subjid-" + str(k+1) + "-pad"].get_text())
 
         return ids
 
@@ -416,7 +484,311 @@ class BasicInfo(GEMGUIComponent):
     def disable(self):
         for k in range(0, self.nsubj):
             self["subjid-" + str(k+1)].disable()
+            self["subjid-" + str(k+1) + "-pad"].disable()
+
         self["experimenter"].disable()
+
+
+
+
+# ==============================================================================
+# Class for controlling experiment and receiving data
+class GroupSession(GEMGUIComponent):
+    def __init__(self, parent):
+        GEMGUIComponent.__init__(self, parent, 1)
+        self.parent = parent
+
+        # Heading for this component of GUI
+        self.set_title("PyEnsemble Group Session")
+
+        # Create a dict for maintaining PyEnsemble information
+        self.pyensemble = {"initialized_experiment": False}
+
+        # Define PyEnsemble endpoints
+        self.pyensemble.update({
+            'urls': {
+                "connect": "/group/session/attach/experimenter/",
+                "update": "/group/session/participants/get/",
+                "init_experiment": "/experiments/gem_control/control/experiment/init/",
+                "end_experiment": "/experiments/gem_control/control/experiment/end/",
+                "init_trial": "/experiments/gem_control/control/trial/init/",
+                "start_trial": "/experiments/gem_control/control/trial/start/",
+                "end_trial": "/experiments/gem_control/control/trial/end/",
+            }
+        })
+
+        # Text box to enter the server URL
+        self.add_row("server", TextBoxGroup(self, "Server:", 36))
+        self["server"].set_text(self.parent["pyensemble_server"])
+        self.add_row("username", TextBoxGroup(self, "User:", 15))
+        self.add_row("password", TextBoxGroup(self, "Password", 15))
+        self.components["password"].entry["show"] = '*'
+
+        # Text box to enter the experimenter code
+        self.add_row("experimenter_code", TextBoxGroup(self, "Experimenter Code:", 4))
+
+        # Text box to enter the session status
+        # status = Text(self, height=1, width=20, borderwidth=2)
+        # self.add_row("status", status)
+
+        # Buttons
+        self.add_row("buttons", ButtonGroup(self, {"Connect": self.connect_server, "Update": self.update, "Initialize": self.initialize_experiment}, 40))
+
+        # Add participant list viewer
+        dv = Text(self, height=6, width=45, borderwidth=2)
+        dv.insert(tkinter.INSERT, "Participants:\n")
+        dv['state'] = 'disabled'
+        self.add_row("dv", dv)
+
+
+    # Bind this session to the server
+    def connect_server(self):
+        success = False
+
+        # Get the requisite inputs
+        server = self["server"].get_text()
+        if not server:
+            showerror("Missing PyEnsemble Server", "Please enter a PyEnsemble server")
+            return
+        self.pyensemble.update({'server': server})
+
+        username = self["username"].get_text()
+        if not username:
+            showerror("Missing username", "Please enter a PyEnsemble username")
+            return
+
+        password = self["password"].get_text()
+        if not password:
+            showerror("Missing password", "Please enter a PyEnsemble password")
+            return
+
+        # Initialize a session object
+        s = requests.Session()
+
+        # Cache the session object
+        self.pyensemble.update({"session": s})
+
+        # Construct the server URL
+        url = server + self.pyensemble["urls"]["connect"]
+
+        # Access the URL
+        resp = s.get(url)
+        if not resp.ok:
+            showerror("Problem fetching form")
+
+        # Check whether it is a login form
+        p = re.compile('name="username"')
+        match = p.search(resp.text)
+
+        if match:
+            # Login and redirect to the target url
+            resp = s.post(resp.url, {
+                'username': username, 
+                'password': password, 
+                'csrfmiddlewaretoken': s.cookies['csrftoken']
+                })
+
+        # Check whether we are being prompted for the experimenter code
+        p = re.compile('name="experimenter_code"')
+        match = p.search(resp.text)
+
+        if match:
+            # Get the experimenter code from our value field
+            experimenter_code = self["experimenter_code"].get_text()
+
+            if not experimenter_code:
+                showerror("Missing Session Experimenter Code", "Please enter a session experimenter code")
+                return
+
+            # Connect to the group session
+            resp = s.post(url, {
+                'experimenter_code': experimenter_code, 
+                'csrfmiddlewaretoken': s.cookies['csrftoken']
+                })
+
+            # Check for success
+            if resp.ok:
+                # Check to see whether we redirected to the status page
+                p = re.compile('id="groupsession_status"')
+                if p.search(resp.text):
+                    success = True
+                else:
+                    p = re.compile("The ticket matching this code has expired")
+                    if p.search(resp.text):
+                        showerror("PyEnsemble Error","Group session ticket has expired")
+
+        
+        if success:
+            # Disable the button
+            self['buttons'].disable("Connect")
+
+            # Update the experimenter field in the basic info
+            if "experimenter" not in self.parent.basic_info.components.keys():
+                basic_info = self.parent.basic_info
+                tbg = TextBoxGroup(basic_info, "Experimenter ID:", 9)
+                tbg.set_text(username)
+                basic_info.add_row("experimenter", tbg)
+
+            # Update our participant list
+            self.update()
+        else:
+            showerror("PyEnsemble Error","Unable to attach to group session")
+
+
+    # Update our bound participant list
+    def update(self):
+        url = self.pyensemble["server"]+self.pyensemble["urls"]["update"]
+        
+        resp = self.pyensemble["session"].get(url)
+        if not resp.ok:
+            showerror("PyEnsemble Error","Unable to update participant list")
+
+        # Get our basic_info section
+        basic_info = self.parent.basic_info
+
+        # Extract our participant info
+        sinfo = resp.json()
+        subjects = sinfo.keys()
+
+        # Update the BasicInfo section
+        # pdb.set_trace()
+
+        # Get the existing subject IDs
+        subids = basic_info.get_subjids()
+        nsubs = len(subids)
+
+        # Create necessary entries in the basic_info section
+        for s in subjects:
+            # Check whether an entry already exists
+            if s in subids:
+                continue
+
+            # Create the entry
+            nsubs += 1
+            subid_id = "subjid-"+str(nsubs)
+            subid_tbg = TextBoxGroup(basic_info, "Subject " + str(nsubs) + " ID:", 12)
+            subid_tbg.set_text(s)
+
+            padid_id = subid_id+"-pad"
+            padid_tbg = TextBoxGroup(basic_info, "Pad#:", 1)
+
+            # basic_info.add_row(subid_id, tbg)
+            basic_info.add_row([subid_id, padid_id], [subid_tbg, padid_tbg])
+
+        # Update
+        msg = "Subjects:\n"
+        for k, v in sinfo.items():
+            msg += f"{k}: {v['first']} {v['last']}\n"
+
+        # delete what is in data viewer now
+        self["dv"]["state"] = "normal"
+        self["dv"].delete(1.0, tkinter.END)
+
+        # write to data viewer
+        self["dv"].insert("end", msg)
+        self["dv"]["state"] = "disabled"
+
+        self.parent.basic_info.nsubj = nsubs  
+
+    def initialize_experiment(self):
+        url = self.pyensemble["server"]+self.pyensemble["urls"]["init_experiment"]
+        
+        # Get our session object
+        s = self.pyensemble["session"]
+
+        # GET the form
+        resp = s.get(url)
+
+        # Fill out the form
+        data = {"csrfmiddlewaretoken": s.cookies["csrftoken"]}
+        data.update({
+            "tappers_requested": self.parent.presets["tappers_requested"],
+            "metronome_alpha": self.parent.presets["metronome_alpha"],
+            "metronome_tempo": self.parent.presets["metronome_tempo"],
+            "repeats": self.parent.presets["repeats"],
+            "windows": self.parent.presets["windows"],
+            "audio_feedback": self.parent.presets["audio_feedback"],
+            "trial_generator": "fully_random"  ,
+            })
+
+        # POST the form
+        resp = s.post(resp.url, data)
+
+        # Check for indications of an error in the response
+        p = re.compile("error")
+
+        if not resp.ok or p.search(resp.text):
+            showerror("PyEnsemble Error","Failed to initialize experiment!")
+            return
+
+        self.pyensemble["initialized_experiment"] = True
+
+        # Disable the Update and Initialize buttons
+        self['buttons'].disable("Update")
+        self['buttons'].disable("Initialize")
+        
+    def end_experiment(self):
+        url = self.pyensemble["server"]+self.pyensemble["urls"]["end_experiment"]
+
+        s = self.pyensemble["session"]
+        resp = s.get(url)
+
+
+    def initialize_trial(self, params):
+        url = self.pyensemble["server"]+self.pyensemble["urls"]["init_trial"]
+
+        # Grab our session object
+        s = self.pyensemble["session"]     
+
+        # Get our form
+        resp = s.get(url)
+
+        # Create our payload
+        data = {"csrfmiddlewaretoken": s.cookies["csrftoken"]}
+
+        # Set our trial number
+        data.update({"trial_num": params["run_number"]})
+
+        # Set our params
+        data.update({"params": json.dumps({
+                "alpha": params["alpha"],
+                "tempo": self.parent.presets["metronome_tempo"],
+                "start_time": params["start_time"],
+            })
+        })
+
+        # Post our form
+        resp = s.post(resp.url, data)
+
+        p = re.compile("error")
+        if not resp.ok or p.search(resp.text):
+            showerror("PyEnsemble Error","Failed to initialize trial!")
+            pdb.set_trace()
+            return False
+
+        return True
+
+    def start_trial(self):
+        url = self.pyensemble["server"]+self.pyensemble["urls"]["start_trial"]
+
+        # Grab our session object
+        s = self.pyensemble["session"]     
+
+        # Call our endpoint
+        resp = s.get(url)
+
+        if not resp.ok:
+            showerror("PyEnsemble Error","Failed to start trial!")
+
+    def end_trial(self):
+        url = self.pyensemble["server"]+self.pyensemble["urls"]["end_trial"]
+
+        # Grab our session object
+        s = self.pyensemble["session"]     
+
+        # Call our endpoint
+        resp = s.get(url)
+
 # ==============================================================================
 # Build Main GUI
 # ==============================================================================
@@ -437,10 +809,22 @@ class GEMGUI(Frame):
         self.root.title("GEM Arduino acquisition system")
         self.grid()
 
+        # Initialize a dictionary for registering cleanup actions
         self.cleanup = dict()
 
+        # Determine whether we are connecting with PyEnsemble
+        self.use_pyensemble = False
+        if self.presets.get("connect_pyensemble", False):
+            self.use_pyensemble = True
+
         # Add relevant modules
-        self.basic_info = BasicInfo(self, self.presets["slaves_requested"])
+        self.basic_info = BasicInfo(self, self.presets["tappers_requested"])
+
+        # Add PyEnsemble components if requested
+        if self.use_pyensemble:
+            self.group_session = GroupSession(self)
+            # self.register_cleanup("pyensemble", self.group_session.end_experiment)
+
         self.exp_control = ExperimentControl(self)
         self.data_viewer = DataViewer(self)
 
@@ -485,7 +869,7 @@ class GEMGUI(Frame):
         self.presets["ioi"] = int(60000 / self["metronome_tempo"])
 
     def randomize_alphas(self):
-        self.alphas = np.repeat(self["metronome_alpha"], self["repeats"])
+        self.alphas = np.repeat(self["metronome_alpha"], self["repeats"]).astype(float)
         np.random.shuffle(self.alphas)
 
         # TODO: need to save random list and write to header and ideally to
@@ -529,6 +913,5 @@ class GEMGUI(Frame):
         self.data_file.write_file_header(d, nruns)
 
         return self.data_file
-
 
 # ==============================================================================
