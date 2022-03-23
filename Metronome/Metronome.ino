@@ -472,59 +472,59 @@ void run()
             that that is feasible within our time constraints
             -SA 20170628
             */
+            
+            // Only send data if this isn't the first window
+            if (window > 0){
+                //first byte is the data transfer protocol identifier
+                Serial.write(GEM_DTP_RAW);
 
-            //first byte is the data transfer protocol identifier
-            Serial.write(GEM_DTP_RAW);
+                // Send current window to ECC - 20170703 LF
+                Serial.write((byte *)window, sizeof (uint16_t));
 
-            // Send current window to ECC - 20170703 LF
-            Serial.write((byte *)window, sizeof (uint16_t));
+                /*NOTE: next, send the scheduled time of the metronome tone for
+                this window, which is what the asynchronies are relative too, see
+                note below on Serial.write() shenanigans
+                -SA 20170628
+                */
+                Serial.write((byte *)&last_met, sizeof (unsigned long));
 
-            /*NOTE: next, send the scheduled time of the metronome tone for
-            this window, which is what the asynchronies are relative too, see
-            note below on Serial.write() shenanigans
-            -SA 20170628
-            */
-            Serial.write((byte *)&last_met, sizeof (unsigned long));
+                /*NOTE: Serial can only write a byte at a time (reading the source
+                reveals that Serial.write(void* data, int length) just writes
+                single bytes in a loop) so to write our array of ints we pass
+                <currAsynch> (which is just pointer to the first element) cast to
+                byte* and the total number of *BYTES* in the array as the length
+                the performance of this data dump should be tested, reading
+                some of the technical material that is available makes me suspicious
+                that this could be quite slow
+                -SA 20170628
+                */
 
-            /*NOTE: Serial can only write a byte at a time (reading the source
-            reveals that Serial.write(void* data, int length) just writes
-            single bytes in a loop) so to write our array of ints we pass
-            <currAsynch> (which is just pointer to the first element) cast to
-            byte* and the total number of *BYTES* in the array as the length
-            the performance of this data dump should be tested, reading
-            some of the technical material that is available makes me suspicious
-            that this could be quite slow
-            -SA 20170628
-            */
-
-            /*NOTE: this is a good example of how a ScopedVolatileLock should be
-            used. the extra {} creates a new scope so <lock> is released
-            immediatly after Serial.write() is finished (i.e. the {} are
-            *CRITICAL*) -SA 20170702
-            WARNING: the gotcha here is that the actual data transmission
-            relies on an ISR, so this means that no data will be transmitted
-            until after the write is finished (i.e. Serial.write() just moves
-            the data into a buffer which triggers an ISR to perform the send)
-            the alternate method would be to do the loop ourselves and only
-            disable interrupts while we read a value from <currAsynch>
-            -SA 20170702
-            */
-            {
-                ScopedVolatileLock lock;
-                Serial.write((byte *)currAsynch, sizeof (int) * GEM_MAX_TAPPERS);
-
-                // Send calculated metronome adjustment to ECC
-                Serial.write((byte *)&asynchAdjust, sizeof (int));
-
-                // reset the current tap times
-                for (uint8_t s = 0; s < GEM_MAX_TAPPERS; ++s)
+                /*NOTE: this is a good example of how a ScopedVolatileLock should be
+                used. the extra {} creates a new scope so <lock> is released
+                immediatly after Serial.write() is finished (i.e. the {} are
+                *CRITICAL*) -SA 20170702
+                WARNING: the gotcha here is that the actual data transmission
+                relies on an ISR, so this means that no data will be transmitted
+                until after the write is finished (i.e. Serial.write() just moves
+                the data into a buffer which triggers an ISR to perform the send)
+                the alternate method would be to do the loop ourselves and only
+                disable interrupts while we read a value from <currAsynch>
+                -SA 20170702
+                */
                 {
-                    currAsynch[s] = NO_RESPONSE;
+                    ScopedVolatileLock lock;
+                    Serial.write((byte *)currAsynch, sizeof (int) * GEM_MAX_TAPPERS);
+
+                    // Send calculated metronome adjustment to ECC
+                    Serial.write((byte *)&asynchAdjust, sizeof (int));
+
+                    // reset the current tap times
+                    for (uint8_t s = 0; s < GEM_MAX_TAPPERS; ++s)
+                    {
+                        currAsynch[s] = NO_RESPONSE;
+                    }
                 }
             }
-
-            // Increment our window counter
-            window++;
 
             #ifdef DEBUG
                 Serial.print(F("Now: "));
@@ -535,6 +535,10 @@ void run()
                 Serial.print(F(": "));
                 Serial.println(met.next);
             #endif
+
+            // Increment our window counter
+            window++;
+
         } // if (currentTime >= windowEnds)
 
         // Check whether we have passed the scheduled metronome time
