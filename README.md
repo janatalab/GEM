@@ -11,6 +11,14 @@ The "Metronome" Arduino functions as the adaptive metronome and which communicat
 
 [Further instructions and project information can be found in the Wiki](https://github.com/janatalab/GEM/wiki).
 
+## Overview
+
+- [Directories](#Directories)
+- [Dependencies](#Dependencies)
+- [Installation instructions](#Instructions)
+- [Citations](#Citations)
+
+
 # Directories
 ### GEM 
 Contains the C++ files that make up the GEM library.
@@ -36,6 +44,8 @@ This project depends on the following third-party libraries which you should ins
 - EnableInterrupt (originally developed using EnableInterrupt library version 0.9.5, but this appears not to be working properly in the newer version)
 
 # Instructions
+Detailed installation instructions are available in the [wiki](https://github.com/janatalab/GEM/wiki/Installation). 
+
 By default, the Arduino software expects to see project directories in the Arduino directory, e.g. /Users/janatalab/Documents/Arduino. The path can be set under the Arduino->Preferences...
 
 Arduino libraries are located within a directory called "libraries", as are any libraries that are installed in support of a project, such as the third-party libraries listed above.
