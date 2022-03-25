@@ -62,7 +62,10 @@ presets = {
     # available. Future releases will incorporate additional heurstic options.
     "metronome_heuristic": ["average"],
 
-    # Are we connecting to a Group Session in PyEnsemble for post-run data collection, e.g. surveys
+    # Are we testing in spoof mode. Default = False
+    # "spoof_mode": False,
+
+    # Are we connecting to a Group Session in PyEnsemble for post-run data collection, e.g. surveys. Default = False
     # "connect_pyensemble": False,
 }
 
