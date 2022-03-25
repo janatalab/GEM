@@ -1,6 +1,6 @@
 # GEM (Groove Enhancement Machine)
 
-[gem](/Images/GEMlogo.svg "The GEM banner")
+[!gem](/Images/GEMlogo.svg "The GEM banner")
 
 This is a repository for code associated with the NAKFI Groove Enhancement Machine (GEM) project led by Petr Janata at UC Davis.
 
