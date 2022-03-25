@@ -2,6 +2,7 @@
 
 ![gem](https://github.com/janatalab/GEM/blob/lkfink-cosmetic/Images/GEMlogo.svg "The GEM banner")
 
+# About
 This is a repository for code associated with the NAKFI Groove Enhancement Machine (GEM) project led by Petr Janata at UC Davis.
 
 The GEM consists of a set of Arduinos that communicate with each other and with a computer running experiment control software written in Python.
@@ -11,16 +12,16 @@ The "Metronome" Arduino functions as the adaptive metronome and which communicat
 [Further instructions and project information can be found in the Wiki](https://github.com/janatalab/GEM/wiki).
 
 # Directories
-## GEM 
+### GEM 
 Contains the C++ files that make up the GEM library.
 
-## GUI 
+### GUI 
 Contains the python files that comprise the graphical user interface, run on the experiment control computer.
 
-## Master_Adaptive
+### Master_Adaptive
 Contains the sketch that is downloaded to the Master Arduino.
 
-## Slave_Adaptive
+### Slave_Adaptive
 Contains the sketch that is downloaded to the Slave Arduino.
 
 # Dependencies
@@ -50,8 +51,11 @@ See the Wiki for further setup instructions.
 # Citations
 Schultz, B. G., & van Vugt, F. T. (2016). Tap Arduino: An Arduino microcontroller for low-latency auditory feedback in sensorimotor synchronization experiments. Behavior Research Methods, 48(4), 1591–1607. [https://doi.org/10.3758/s13428-015-0671-3](https://doi.org/10.3758/s13428-015-0671-3)
 
-Paper associated with this code:
+The GEM was originally described and published in the following paper:
 Fink, Alexander, & Janata (submitted). A multi-person adaptive metronome enhances synchrony amongst groups of tappers. 
 
-DOI for this code repository:
-TODO
+Please cite the paper if using anything from this repository. 
+
+Note that more information about the proof-of-concept experiments reported in the paper is available in a separate repository: [https://github.com/janatalab/GEM-Experiments-POC](https://github.com/janatalab/GEM-Experiments-POC)
+
+
