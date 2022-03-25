@@ -7,7 +7,7 @@ This is a repository for code associated with the NAKFI Groove Enhancement Machi
 
 The GEM consists of a set of Arduinos that communicate with each other and with a computer running experiment control software written in Python.
 
-The "Metronome" Arduino functions as the adaptive metronome and which communicates with the computer. A force-sensitive resistor (FSR) is connected to each of the other Arduinos, the "Tapper" Arduinos, utilizing a scheme first described by Schulz & van Vugt (2016). The Tapper Arduinos communicate tap events via interrupts to the Metronome Arduino which adjusts the time of the next metronome tone based on the individual tap times and parameters that have been communicated from the experiment control computer (ECC).
+The "Metronome" Arduino functions as the adaptive metronome and communicates with the computer. A force-sensitive resistor (FSR) is connected to each of the other Arduinos, the "Tapper" Arduinos, utilizing a scheme first described by Schulz & van Vugt (2016). The Tapper Arduinos communicate tap events via interrupts to the Metronome Arduino which adjusts the time of the next metronome tone based on the individual tap times and parameters that have been communicated from the experiment control computer (ECC).
 
 [Further instructions and project information can be found in the Wiki](https://github.com/janatalab/GEM/wiki).
 
@@ -40,7 +40,7 @@ Although the project was originally developed to run on Python 2, it has been po
 
 This project depends on the following third-party libraries which you should install in your system's Arduino/libraries folder following the instructions at [http://www.arduino.cc/en/Guide/Libraries](http://www.arduino.cc/en/Guide/Libraries):
 
-- WaveHC
+- WaveHC (<=1.0.2)
 - EnableInterrupt (originally developed using EnableInterrupt library version 0.9.5, but this appears not to be working properly in the newer version)
 
 # Instructions
@@ -66,6 +66,6 @@ Fink, Alexander, & Janata (submitted). A multi-person adaptive metronome enhance
 
 Please cite the paper if using anything from this repository. 
 
-Note that more information about the proof-of-concept experiments reported in the paper is available in a separate repository: [https://github.com/janatalab/GEM-Experiments-POC](https://github.com/janatalab/GEM-Experiments-POC)
+Note that more information about the proof-of-concept experiments reported in the paper is available in a separate git repository: [https://github.com/janatalab/GEM-Experiments-POC](https://github.com/janatalab/GEM-Experiments-POC)
 
 
