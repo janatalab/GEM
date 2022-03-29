@@ -62,7 +62,8 @@ See the Wiki for further setup instructions.
 Schultz, B. G., & van Vugt, F. T. (2016). Tap Arduino: An Arduino microcontroller for low-latency auditory feedback in sensorimotor synchronization experiments. Behavior Research Methods, 48(4), 1591–1607. [https://doi.org/10.3758/s13428-015-0671-3](https://doi.org/10.3758/s13428-015-0671-3)
 
 The GEM was originally described and published in the following paper:
-Fink, Alexander, & Janata (submitted). A multi-person adaptive metronome enhances synchrony amongst groups of tappers. 
+Fink, Alexander, & Janata (submitted). The Groove Enhancement Machine (GEM): A multi-person adaptive metronome to manipulate sensorimotor synchronization and subjective enjoyment.
+
 
 Please cite the paper if using anything from this repository. 
 
