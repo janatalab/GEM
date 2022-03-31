@@ -191,7 +191,7 @@ class GEMIOManager:
         class GEMIOResource:
             def __init__(self, ifo, datafile, is_spoof):
 
-                if not is_spoof
+                if not is_spoof:
                     self.com = serial.Serial(
                         port=ifo["port"],
                         baudrate=ifo["baud_rate"],
@@ -262,7 +262,7 @@ class GEMAcquisition(Thread):
 
     # override Thread.run()
     def run(self):
-        with GEMIOManager(self.serial_ifo, self.datafile) as io:
+        with GEMIOManager(self.serial_ifo, self.datafile, self.is_spoof) as io:
 
             # allow some time for handshake!
             io.com.readline()
