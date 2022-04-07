@@ -1,4 +1,4 @@
-// This file contains all of the constants for:
+/// This file contains all of the constants for:
 // - the GEM library
 // - the associated Arduino sketches that utilize the library
 // - the python code that controls GEM experiments
@@ -90,6 +90,8 @@ Sound related constants (0x3* = 48 - 71)
 //make sense to move then to the contol family
 #define MUTE_SOUND   0x30 //48
 #define UNMUTE_SOUND 0x31 //49
+#define UPDATE_SOUND 0x32 //50
+#define GEM_SOUNDS   0x33 //51
 
 /* -----------------------------------------------------------------------------
 DTP identifiers (DTP -> data transfer protocol: 0xf* = 240 - 255)

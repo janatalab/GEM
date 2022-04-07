@@ -182,11 +182,6 @@ class GEMIOManager:
         self.ifo = serial_ifo
         self.datafile = datafile
         self.is_spoof = is_spoof
-<<<<<<< HEAD
-
-=======
-    
->>>>>>> 4e6a92b (serial spoof)
     # --------------------------------------------------------------------------
     def __enter__(self):
         # ======================================================================
@@ -199,17 +194,10 @@ class GEMIOManager:
                         port=ifo["port"],
                         baudrate=ifo["baud_rate"],
                         timeout=ifo["timeout"]
-<<<<<<< HEAD
                     )
 
                 else:
                     self.com = SerialSpoof()
-=======
-                ) 
-                else:
-                    self.com = SerialSpoof()
-                
->>>>>>> 4e6a92b (serial spoof)
 
                 if self.com.isOpen():
                     print("serial is open!")
@@ -270,7 +258,6 @@ class GEMAcquisition(Thread):
 
         self.is_spoof = presets.get("spoof_mode", False)
 
-        self.is_spoof = presets.get("spoof_mode", False)
 
     # override Thread.run()
     def run(self):

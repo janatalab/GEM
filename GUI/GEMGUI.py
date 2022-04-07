@@ -22,6 +22,7 @@ from tkinter.messagebox import showerror, askyesno
 from threading import Timer
 from datetime import date, datetime
 from copy import copy
+from turtle import update
 import numpy as np
 import time
 import os
@@ -88,11 +89,21 @@ class GEMGUIComponent(Frame):
 # ==============================================================================
 # Class to create text (left) next to dropdown menu (right)
 class DropDown(OptionMenu):
+    
     def __init__(self, master, status, *options):
+        self.choice = "sound1"
         self.var = StringVar(master)
         self.var.set(status)
-        OptionMenu.__init__(self, master, self.var, *options)
+        OptionMenu.__init__(self, master, self.var, *options,command = self.update_choice)
+        # OptionMenu.__init__(self, master, self.var, *options)
 
+    def update_choice(self, *args):
+        self.choice = self.var.get()
+
+    def get_value(self):
+        return self.choice
+        
+    
 
 # ==============================================================================
 # class to create text (left) and text box (right)
@@ -241,6 +252,7 @@ class ExperimentControl(GEMGUIComponent):
         self.add_row("runsleft", TextBoxGroup(self,
             "Number of Runs Remaining:", 3))
 
+        
         self["runsleft"].set_text(str(self.nruns))
         self["runsleft"].disable()
         self.counter = self.nruns
@@ -261,6 +273,9 @@ class ExperimentControl(GEMGUIComponent):
 
         ids = self.parent.basic_info.get_subjids()
         pad_ids = self.parent.basic_info.get_padids()
+        sound_ids = self.parent.basic_info.get_soundids()
+        # update presets with sound ids
+        self.parent.presets["sound_ids"] = sound_ids
 
         k = 1
         for id in ids:
@@ -311,7 +326,7 @@ class ExperimentControl(GEMGUIComponent):
                 return
 
             # first run, disable editing of text boxes
-            self.parent.basic_info.disable();
+            self.parent.basic_info.disable()
 
         else:
             data_file = self.parent.data_file
@@ -321,12 +336,12 @@ class ExperimentControl(GEMGUIComponent):
 
         # Get current run number
         krun = self.nruns - self.counter
-
+       
         # Put our trial parameters into a dictionary
         params = {
                 "run_number": krun+1,
                 "start_time": get_time(),
-                "alpha": self.parent.alphas[krun]
+                "alpha": self.parent.alphas[krun],
             }
 
         # If connected to PyEnsemble, initialize the trial
@@ -348,6 +363,7 @@ class ExperimentControl(GEMGUIComponent):
         # write run header
         data_file.write_header(krun, params)
 
+        
         # the actual IO thread
         self.acq = GEMAcquisition(data_file,
             self.parent.itc,
@@ -369,7 +385,15 @@ class ExperimentControl(GEMGUIComponent):
         print("spawned thread")
 
         self.running = True
-
+    # --------------------------------------------------------------------------
+    def update_sound(self):
+        # gets sound file name specifications and updates presete
+        
+        # disable update sound button 
+        # self["Sounds"].disable("Update Sound")
+        
+        
+        return
     # --------------------------------------------------------------------------
     def close_request(self):
         # tell parent not to close the window (forces user to click abort first)
@@ -447,6 +471,13 @@ class BasicInfo(GEMGUIComponent):
 
             # Add subject text boxes
             hrs = hours_since_trump()
+            
+            # Metronome sound
+            met_id = "MASTER"
+            met_sound_id = met_id + "-sound"
+            met_id_drop = DropDown(self, "sound1", "sound1", "sound2", "sound3")
+            self.add_row([met_sound_id], [met_id_drop])
+                
             for k in range(0, nsubj):
                 id_str = str(k+1)
 
@@ -456,7 +487,10 @@ class BasicInfo(GEMGUIComponent):
                 padid_id = subid_id + "-pad"
                 padid_tbg = TextBoxGroup(self, "Pad#:", 1, k+1)
 
-                self.add_row([subid_id, padid_id], [subid_tbg, padid_tbg])
+                soundid_id = subid_id + "-sound"
+                soundid_drop = DropDown(self, "sound1", "sound1", "sound2", "sound3")
+                self.add_row([subid_id, padid_id, soundid_id], [subid_tbg, padid_tbg, soundid_drop])
+                
 
             self.nsubj = nsubj
         else:
@@ -476,6 +510,14 @@ class BasicInfo(GEMGUIComponent):
             for k in range(0, self.nsubj):
                 ids.append(self["subjid-" + str(k+1) + "-pad"].get_text())
 
+        return ids
+
+    def get_soundids(self):
+        ids = list()
+        ids.append(self["MASTER-sound"].get_value())
+        if self.nsubj:
+            for k in range(0, self.nsubj):
+                ids.append(self["subjid-"+str(k+1)+"-sound"].get_value())
         return ids
 
     def get_experimenter(self):
