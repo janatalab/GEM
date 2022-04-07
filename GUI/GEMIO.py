@@ -258,10 +258,20 @@ class GEMAcquisition(Thread):
 
         self.is_spoof = presets.get("spoof_mode", False)
 
+        self.met_sound = self.constants["GEM_METRONOME_SOUND"] + bytes(str(presets["met_sound"]), 'utf-8')
 
-        self.is_spoof = presets.get("spoof_mode", False)
+        self.tap_1_sound = self.constants["GEM_TAPPER_1_SOUND"] + bytes(str(presets["tap_1_sound"]), 'utf-8')
+        
+        if (presets["tap_2_sound"]):
+            self.tap_2_sound = self.constants["GEM_TAPPER_2_SOUND"] + bytes(str(presets["tap_2_sound"]), 'utf-8')
 
-        self.sounds = self.constants["GEM_SOUNDS"] + str(presets["sound_ids"])
+        if (presets["tap_3_sound"]):
+            self.tap_3_sound = self.constants["GEM_TAPPER_3_SOUND"] + bytes(str(presets["tap_3_sound"]), 'utf-8')
+        
+        if (presets["tap_4_sound"]):
+            self.tap_4_sound = self.constants["GEM_TAPPER_4_SOUND"] + bytes(str(presets["tap_4_sound"]), 'utf-8')
+
+
 
     # override Thread.run()
     def run(self):

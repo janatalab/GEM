@@ -275,7 +275,13 @@ class ExperimentControl(GEMGUIComponent):
         pad_ids = self.parent.basic_info.get_padids()
         sound_ids = self.parent.basic_info.get_soundids()
         # update presets with sound ids
-        self.parent.presets["sound_ids"] = sound_ids
+        self.parent.presets["met_sound"] = sound_ids[0]
+        tap_sounds = sound_ids[1:]
+        i = 1
+        for sound in tap_sounds:
+            self.parent.presets["tap_"+i+"_sound"] = sound
+        
+        
 
         k = 1
         for id in ids:

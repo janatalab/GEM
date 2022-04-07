@@ -88,10 +88,13 @@ Sound related constants (0x3* = 48 - 71)
 ----------------------------------------------------------------------------- */
 //NOTE: these might be considered control / "state" constants too, so it might
 //make sense to move then to the contol family
-#define MUTE_SOUND   0x30 //48
-#define UNMUTE_SOUND 0x31 //49
-#define UPDATE_SOUND 0x32 //50
-#define GEM_SOUNDS   0x33 //51
+#define MUTE_SOUND             0x30 //48
+#define UNMUTE_SOUND           0x31 //49
+#define GEM_METRONOME_SOUND    0x32 //50
+#define GEM_TAPPER1_SOUND      0x33 //51
+#define GEM_TAPPER2_SOUND      0x34 //52
+#define GEM_TAPPER3_SOUND      0x35 //53
+#define GEM_TAPPER4_SOUND      0x36 //54
 
 /* -----------------------------------------------------------------------------
 DTP identifiers (DTP -> data transfer protocol: 0xf* = 240 - 255)
