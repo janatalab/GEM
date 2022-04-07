@@ -259,6 +259,10 @@ class GEMAcquisition(Thread):
         self.is_spoof = presets.get("spoof_mode", False)
 
 
+        self.is_spoof = presets.get("spoof_mode", False)
+
+        self.sounds = self.constants["GEM_SOUNDS"] + str(presets["sound_ids"])
+
     # override Thread.run()
     def run(self):
         with GEMIOManager(self.serial_ifo, self.datafile, self.is_spoof) as io:
