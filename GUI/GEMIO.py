@@ -111,6 +111,7 @@ class GEMDataFile:
             if self.run_offsets[krun] < 0:
                 self.run_offsets[krun] = self._io.tell()
                 self.write_run_offset(krun, self.run_offsets[krun])
+
             else:
                 # the current run <krun> was previously aborted, so seek back
                 # to where that run started to overwrite that run's data
@@ -178,23 +179,27 @@ class SerialSpoof:
 # a with statement
 class GEMIOManager:
     # --------------------------------------------------------------------------
-    def __init__(self, serial_ifo, datafile):
+    def __init__(self, serial_ifo, datafile, is_spoof):
         self.ifo = serial_ifo
         self.datafile = datafile
+        self.is_spoof = is_spoof
+
     # --------------------------------------------------------------------------
     def __enter__(self):
         # ======================================================================
         # the actual GEMIO resource
         class GEMIOResource:
-            def __init__(self, ifo, datafile):
+            def __init__(self, ifo, datafile, is_spoof):
 
-                self.com = serial.Serial(
-                    port=ifo["port"],
-                    baudrate=ifo["baud_rate"],
-                    timeout=ifo["timeout"]
-                )
+                if not is_spoof:
+                    self.com = serial.Serial(
+                        port=ifo["port"],
+                        baudrate=ifo["baud_rate"],
+                        timeout=ifo["timeout"]
+                    )
 
-                # self.com = SerialSpoof()
+                else:
+                    self.com = SerialSpoof()
 
                 if self.com.isOpen():
                     print("serial is open!")
@@ -226,7 +231,7 @@ class GEMIOManager:
 
         # ======================================================================
 
-        self.io = GEMIOResource(self.ifo, self.datafile)
+        self.io = GEMIOResource(self.ifo, self.datafile, self.is_spoof)
 
         return self.io
     # --------------------------------------------------------------------------
@@ -249,13 +254,15 @@ class GEMAcquisition(Thread):
 
         self.windows = presets["windows"]
 
-        self.tempo = self.constants["GEM_METRONOME_TEMPO"] + bytes(str(int(presets["metronome_tempo"])), 'utf-8') # Python 3
+        self.tempo = self.constants["GEM_METRONOME_TEMPO"] + bytes(str(int(presets["metronome_tempo"])), 'utf-8') 
 
-        self.alpha = self.constants["GEM_METRONOME_ALPHA"] + bytes(str(alpha),'utf-8') # Python 3
+        self.alpha = self.constants["GEM_METRONOME_ALPHA"] + bytes(str(alpha),'utf-8')
+
+        self.is_spoof = presets.get("spoof_mode", False)
 
     # override Thread.run()
     def run(self):
-        with GEMIOManager(self.serial_ifo, self.datafile) as io:
+        with GEMIOManager(self.serial_ifo, self.datafile, self.is_spoof) as io:
 
             # allow some time for handshake!
             io.com.readline()
