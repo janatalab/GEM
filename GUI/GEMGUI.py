@@ -571,6 +571,9 @@ class GroupSession(GEMGUIComponent):
         # Construct the server URL
         url = server + self.pyensemble["urls"]["connect"]
 
+        # Construct our headers
+        headers = {'Referer': server}
+
         # Access the URL
         resp = s.get(url)
         if not resp.ok:
@@ -582,15 +585,31 @@ class GroupSession(GEMGUIComponent):
 
         if match:
             # Login and redirect to the target url
-            resp = s.post(resp.url, {
+            resp = s.post(
+                resp.url, 
+                {
                 'username': username, 
                 'password': password, 
                 'csrfmiddlewaretoken': s.cookies['csrftoken']
-                })
+                },
+                headers=headers
+            )
+
+        # Make sure the request succeeded
+        if not resp.ok:
+            test_str = "CSRF verification failed"
+            p = re.compile(test_str)
+            if p.search(resp.text):
+                showerror(f"Server code: {resp.status_code}", test_str)
+            else:
+                showerror("Alert", f"Server code: {resp.status_code}")
+
 
         # Check whether we are being prompted for the experimenter code
         p = re.compile('name="experimenter_code"')
         match = p.search(resp.text)
+
+        pdb.set_trace()
 
         if match:
             # Get the experimenter code from our value field
@@ -604,7 +623,8 @@ class GroupSession(GEMGUIComponent):
             resp = s.post(url, {
                 'experimenter_code': experimenter_code, 
                 'csrfmiddlewaretoken': s.cookies['csrftoken']
-                })
+                },
+                headers=headers)
 
             # Check for success
             if resp.ok:
