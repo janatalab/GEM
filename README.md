@@ -1,6 +1,6 @@
 # GEM (Groove Enhancement Machine)
 
-![gem](https://github.com/janatalab/GEM/blob/lkfink-cosmetic/Images/GEMlogo.svg "The GEM banner")
+![gem](https://github.com/janatalab/GEM/blob/main/Images/GEMlogo.svg "The GEM banner")
 
 # About
 This is a repository for code associated with the NAKFI Groove Enhancement Machine (GEM) project led by Petr Janata at UC Davis.
@@ -62,8 +62,8 @@ See the Wiki for further setup instructions.
 Schultz, B. G., & van Vugt, F. T. (2016). Tap Arduino: An Arduino microcontroller for low-latency auditory feedback in sensorimotor synchronization experiments. Behavior Research Methods, 48(4), 1591–1607. [https://doi.org/10.3758/s13428-015-0671-3](https://doi.org/10.3758/s13428-015-0671-3)
 
 The GEM was originally described and published in the following paper:
-Fink, Alexander, & Janata (submitted). The Groove Enhancement Machine (GEM): A multi-person adaptive metronome to manipulate sensorimotor synchronization and subjective enjoyment.
 
+Fink, L.K., Alexander, P.C., & Janata, P. (2022). The Groove Enhancement Machine (GEM): A multi-person adaptive metronome to manipulate sensorimotor synchronization and subjective enjoyment. *Front. Hum. Neurosci. 16*:916551. [doi: 10.3389/fnhum.2022.916551](https://doi.org/10.3389/fnhum.2022.916551)
 
 Please cite the paper if using anything from this repository. 
 
