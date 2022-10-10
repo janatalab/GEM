@@ -604,12 +604,14 @@ class GroupSession(GEMGUIComponent):
             else:
                 showerror("Alert", f"Server code: {resp.status_code}")
 
+        # Check for invalid username or password
+        test_str = "Please enter a correct username and password"
+        if re.compile(test_str).search(resp.text):
+            showerror("Invalid credentials", test_str)
 
         # Check whether we are being prompted for the experimenter code
         p = re.compile('name="experimenter_code"')
         match = p.search(resp.text)
-
-        pdb.set_trace()
 
         if match:
             # Get the experimenter code from our value field
@@ -633,6 +635,10 @@ class GroupSession(GEMGUIComponent):
                 if p.search(resp.text):
                     success = True
                 else:
+                    test_str = "Failed to retrieve ticket matching this code"
+                    if re.compile(test_str).search(resp.text):
+                        showerror("PyEnsemble Error","Invalid Experimenter Code")
+
                     p = re.compile("The ticket matching this code has expired")
                     if p.search(resp.text):
                         showerror("PyEnsemble Error","Group session ticket has expired")
