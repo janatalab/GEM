@@ -507,13 +507,16 @@ class GroupSession(GEMGUIComponent):
         # Define PyEnsemble endpoints
         self.pyensemble.update({
             'urls': {
-                "connect": "/group/session/attach/experimenter/",
-                "update": "/group/session/participants/get/",
+                # gem_control specific URLs
                 "init_experiment": "/experiments/gem_control/control/experiment/init/",
-                "end_experiment": "/experiments/gem_control/control/experiment/end/",
                 "init_trial": "/experiments/gem_control/control/trial/init/",
-                "start_trial": "/experiments/gem_control/control/trial/start/",
-                "end_trial": "/experiments/gem_control/control/trial/end/",
+
+                # Generic PyEnsemble group experiment URLs
+                "connect": "group/session/attach/experimenter/",
+                "update": "group/session/participants/get/",
+                "start_trial": "group/trial/start/",
+                "end_trial": "group/trial/end/",
+                "end_experiment": "group/session/end/",
             }
         })
 
