@@ -569,12 +569,15 @@ class GroupSession(GEMGUIComponent):
         self.pyensemble.update({"session": s})
 
         # Construct the server URL
-        url = server + self.pyensemble["urls"]["connect"]
+        url = self.pyensemble['server'] + self.pyensemble["urls"]["connect"]
+
+        # Construct our headers
+        headers = {'Referer': self.pyensemble['server']}
 
         # Access the URL
         resp = s.get(url)
         if not resp.ok:
-            showerror("Problem fetching form")
+            showerror("PyEnsemble Error","Problem fetching form")
 
         # Check whether it is a login form
         p = re.compile('name="username"')
@@ -582,11 +585,29 @@ class GroupSession(GEMGUIComponent):
 
         if match:
             # Login and redirect to the target url
-            resp = s.post(resp.url, {
+            resp = s.post(
+                resp.url, 
+                {
                 'username': username, 
                 'password': password, 
                 'csrfmiddlewaretoken': s.cookies['csrftoken']
-                })
+                },
+                headers=headers
+            )
+
+        # Make sure the request succeeded
+        if not resp.ok:
+            test_str = "CSRF verification failed"
+            p = re.compile(test_str)
+            if p.search(resp.text):
+                showerror(f"Server code: {resp.status_code}", test_str)
+            else:
+                showerror("Alert", f"Server code: {resp.status_code}")
+
+        # Check for invalid username or password
+        test_str = "Please enter a correct username and password"
+        if re.compile(test_str).search(resp.text):
+            showerror("Invalid credentials", test_str)
 
         # Check whether we are being prompted for the experimenter code
         p = re.compile('name="experimenter_code"')
@@ -604,7 +625,8 @@ class GroupSession(GEMGUIComponent):
             resp = s.post(url, {
                 'experimenter_code': experimenter_code, 
                 'csrfmiddlewaretoken': s.cookies['csrftoken']
-                })
+                },
+                headers=headers)
 
             # Check for success
             if resp.ok:
@@ -613,6 +635,10 @@ class GroupSession(GEMGUIComponent):
                 if p.search(resp.text):
                     success = True
                 else:
+                    test_str = "Failed to retrieve ticket matching this code"
+                    if re.compile(test_str).search(resp.text):
+                        showerror("PyEnsemble Error","Invalid Experimenter Code")
+
                     p = re.compile("The ticket matching this code has expired")
                     if p.search(resp.text):
                         showerror("PyEnsemble Error","Group session ticket has expired")
@@ -691,6 +717,9 @@ class GroupSession(GEMGUIComponent):
         self.parent.basic_info.nsubj = nsubs  
 
     def initialize_experiment(self):
+        # Construct our headers
+        headers = {'Referer': self.pyensemble['server']}
+
         url = self.pyensemble["server"]+self.pyensemble["urls"]["init_experiment"]
         
         # Get our session object
@@ -712,13 +741,14 @@ class GroupSession(GEMGUIComponent):
             })
 
         # POST the form
-        resp = s.post(resp.url, data)
+        resp = s.post(resp.url, data, headers=headers)
 
         # Check for indications of an error in the response
         p = re.compile("error")
 
         if not resp.ok or p.search(resp.text):
             showerror("PyEnsemble Error","Failed to initialize experiment!")
+            print(f"{resp.text}")
             return
 
         self.pyensemble["initialized_experiment"] = True
@@ -735,6 +765,9 @@ class GroupSession(GEMGUIComponent):
 
 
     def initialize_trial(self, params):
+        # Construct our headers
+        headers = {'Referer': self.pyensemble['server']}
+
         url = self.pyensemble["server"]+self.pyensemble["urls"]["init_trial"]
 
         # Grab our session object
@@ -758,12 +791,12 @@ class GroupSession(GEMGUIComponent):
         })
 
         # Post our form
-        resp = s.post(resp.url, data)
+        resp = s.post(resp.url, data, headers=headers)
 
         p = re.compile("error")
         if not resp.ok or p.search(resp.text):
             showerror("PyEnsemble Error","Failed to initialize trial!")
-            pdb.set_trace()
+            print(f"{resp.text}")
             return False
 
         return True
