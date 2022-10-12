@@ -30,7 +30,7 @@ presets = {
     "serial": {"port": get_metronome_port(serial_num=metronome_serial_num), "baud_rate": 115200, "timeout": 5},
 
     # beginning of output file string for output data files
-    "filename": "GEM_example",
+    "filename": "GEM_pyensemble_example",
 
     # directory for output data
     "data_dir": "/Users/" + os.environ['USER'] + "/Desktop/GEM_data/demo_data/",
