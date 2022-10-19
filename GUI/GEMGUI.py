@@ -507,14 +507,15 @@ class GroupSession(GEMGUIComponent):
         # Define PyEnsemble endpoints
         self.pyensemble.update({
             'urls': {
-                "connect": "group/session/attach/experimenter/",
-                "update": "group/session/participants/get/",
-                "init_experiment": "experiments/gem_control/control/experiment/init/",
-                "end_experiment": "experiments/gem_control/control/experiment/end/",
-                "init_trial": "experiments/gem_control/control/trial/init/",
-                "start_trial": "experiments/gem_control/control/trial/start/",
-                "end_trial": "experiments/gem_control/control/trial/end/",
-            }
+                "connect": "/group/session/attach/experimenter/",
+                "update": "/group/session/participants/get/",
+                "init_experiment": "/experiments/gem_control/control/experiment/init/",
+                "end_experiment": "/experiments/gem_control/control/experiment/end/",
+                "init_trial": "/experiments/gem_control/control/trial/init/",
+                "start_trial": "/experiments/gem_control/control/trial/start/",
+                "end_trial": "/experiments/gem_control/control/trial/end/",
+            },
+            'verify_ssl': self.parent.presets.get('verify_ssl',True)
         })
 
         # Text box to enter the server URL
@@ -575,7 +576,8 @@ class GroupSession(GEMGUIComponent):
         headers = {'Referer': self.pyensemble['server']}
 
         # Access the URL
-        resp = s.get(url)
+        # verify=os.path.join(os.environ['GEMROOT'],'GUI/development.crt')
+        resp = s.get(url, verify=self.pyensemble['verify_ssl'])
         if not resp.ok:
             showerror("PyEnsemble Error","Problem fetching form")
 
@@ -592,7 +594,8 @@ class GroupSession(GEMGUIComponent):
                 'password': password, 
                 'csrfmiddlewaretoken': s.cookies['csrftoken']
                 },
-                headers=headers
+                headers=headers,
+                verify=self.pyensemble['verify_ssl']
             )
 
         # Make sure the request succeeded
@@ -626,7 +629,9 @@ class GroupSession(GEMGUIComponent):
                 'experimenter_code': experimenter_code, 
                 'csrfmiddlewaretoken': s.cookies['csrftoken']
                 },
-                headers=headers)
+                headers=headers,
+                verify=self.pyensemble['verify_ssl']
+                )
 
             # Check for success
             if resp.ok:
@@ -665,7 +670,7 @@ class GroupSession(GEMGUIComponent):
     def update(self):
         url = self.pyensemble["server"]+self.pyensemble["urls"]["update"]
         
-        resp = self.pyensemble["session"].get(url)
+        resp = self.pyensemble["session"].get(url, verify=self.pyensemble['verify_ssl'])
         if not resp.ok:
             showerror("PyEnsemble Error","Unable to update participant list")
 
@@ -726,7 +731,7 @@ class GroupSession(GEMGUIComponent):
         s = self.pyensemble["session"]
 
         # GET the form
-        resp = s.get(url)
+        resp = s.get(url, verify=self.pyensemble['verify_ssl'])
 
         # Fill out the form
         data = {"csrfmiddlewaretoken": s.cookies["csrftoken"]}
@@ -741,7 +746,7 @@ class GroupSession(GEMGUIComponent):
             })
 
         # POST the form
-        resp = s.post(resp.url, data, headers=headers)
+        resp = s.post(resp.url, data, headers=headers, verify=self.pyensemble['verify_ssl'])
 
         # Check for indications of an error in the response
         p = re.compile("error")
@@ -761,7 +766,7 @@ class GroupSession(GEMGUIComponent):
         url = self.pyensemble["server"]+self.pyensemble["urls"]["end_experiment"]
 
         s = self.pyensemble["session"]
-        resp = s.get(url)
+        resp = s.get(url, verify=self.pyensemble['verify_ssl'])
 
 
     def initialize_trial(self, params):
@@ -774,7 +779,7 @@ class GroupSession(GEMGUIComponent):
         s = self.pyensemble["session"]     
 
         # Get our form
-        resp = s.get(url)
+        resp = s.get(url, verify=self.pyensemble['verify_ssl'])
 
         # Create our payload
         data = {"csrfmiddlewaretoken": s.cookies["csrftoken"]}
@@ -791,7 +796,7 @@ class GroupSession(GEMGUIComponent):
         })
 
         # Post our form
-        resp = s.post(resp.url, data, headers=headers)
+        resp = s.post(resp.url, data, headers=headers, verify=self.pyensemble['verify_ssl'])
 
         p = re.compile("error")
         if not resp.ok or p.search(resp.text):
@@ -808,7 +813,7 @@ class GroupSession(GEMGUIComponent):
         s = self.pyensemble["session"]     
 
         # Call our endpoint
-        resp = s.get(url)
+        resp = s.get(url, verify=self.pyensemble['verify_ssl'])
 
         if not resp.ok:
             showerror("PyEnsemble Error","Failed to start trial!")
@@ -820,7 +825,7 @@ class GroupSession(GEMGUIComponent):
         s = self.pyensemble["session"]     
 
         # Call our endpoint
-        resp = s.get(url)
+        resp = s.get(url, verify=self.pyensemble['verify_ssl'])
 
 # ==============================================================================
 # Build Main GUI

@@ -20,12 +20,18 @@ sys.path.append(os.path.join(os.environ['GEMROOT'],'GUI'))
 from GEMGUI import GEMGUI
 from GEMIO import get_metronome_port
 
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 # Indicate the serial# of the metronome Arduino.
 # This is used to search for the correct port information, and is unique for every setup
 metronome_serial_num = "9543731333535131D171"
 
 # Define experimental presets
 presets = {
+    # Useful to set verify_ssl to False if debugging
+    "verify_ssl": False,
+
     # metronome serial port info
     "serial": {"port": get_metronome_port(serial_num=metronome_serial_num), "baud_rate": 115200, "timeout": 5},
 
@@ -67,7 +73,7 @@ presets = {
 
     # Are we connecting to a Group Session in PyEnsemble for post-run data collection, e.g. surveys. Default = False
     "connect_pyensemble": True,
-    "pyensemble_server": "https://atonal.ucdavis.edu/pyensemble/",
+    "pyensemble_server": "https://atonal.ucdavis.edu:8000",
 }
 
 
