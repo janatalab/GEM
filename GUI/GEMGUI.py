@@ -337,11 +337,6 @@ class ExperimentControl(GEMGUIComponent):
             if not initialized:
                 return
 
-            # Pause to give clients a chance to update and prepare for the trial
-            # Should probably make this a preset somewhere, but for now use 2.5 seconds
-            pre_start_pause = 2.5
-            time.sleep(pre_start_pause)
-
             # Signal to PyEnsemble that we are in the running state
             self.parent.group_session.start_trial()
 
@@ -768,6 +763,8 @@ class GroupSession(GEMGUIComponent):
         s = self.pyensemble["session"]
         resp = s.get(url, verify=self.pyensemble['verify_ssl'])
 
+        return True
+
 
     def initialize_trial(self, params):
         # Construct our headers
@@ -784,13 +781,13 @@ class GroupSession(GEMGUIComponent):
         # Create our payload
         data = {"csrfmiddlewaretoken": s.cookies["csrftoken"]}
 
-        # Set our trial number
         data.update({"trial_num": params["run_number"]})
 
         # Set our params
         data.update({"params": json.dumps({
                 "alpha": params["alpha"],
                 "tempo": self.parent.presets["metronome_tempo"],
+                "trial_num": params["run_number"],
                 "start_time": params["start_time"],
             })
         })
@@ -861,7 +858,7 @@ class GEMGUI(Frame):
         # Add PyEnsemble components if requested
         if self.use_pyensemble:
             self.group_session = GroupSession(self)
-            # self.register_cleanup("pyensemble", self.group_session.end_experiment)
+            self.register_cleanup("pyensemble", self.group_session.end_experiment)
 
         self.exp_control = ExperimentControl(self)
         self.data_viewer = DataViewer(self)

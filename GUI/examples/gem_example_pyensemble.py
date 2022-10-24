@@ -73,7 +73,7 @@ presets = {
 
     # Are we connecting to a Group Session in PyEnsemble for post-run data collection, e.g. surveys. Default = False
     "connect_pyensemble": True,
-    "pyensemble_server": "https://atonal.ucdavis.edu:8000",
+    "pyensemble_server": "https://atonal.ucdavis.edu/gem/",
 }
 
 
