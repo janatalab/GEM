@@ -657,6 +657,10 @@ class GroupSession(GEMGUIComponent):
 
             # Update our participant list
             self.update()
+
+            # Register our cleanup routine
+            self.register_cleanup("pyensemble", self.group_session.end_experiment)
+            
         else:
             showerror("PyEnsemble Error","Unable to attach to group session")
 
@@ -835,6 +839,11 @@ class GEMGUI(Frame):
         self.hst = hours_since_trump()
 
         self.presets = presets
+
+        # What we initialize depends on our source of run parameters, 
+        # i.e. whether they are local or from PyEnsemble
+
+        # In multi-tempo, will need to set run_duration on the fly.
         self.presets["run_duration"] = self["windows"] / self["metronome_tempo"] * 60.0
 
         self.randomize_alphas()
@@ -858,7 +867,6 @@ class GEMGUI(Frame):
         # Add PyEnsemble components if requested
         if self.use_pyensemble:
             self.group_session = GroupSession(self)
-            self.register_cleanup("pyensemble", self.group_session.end_experiment)
 
         self.exp_control = ExperimentControl(self)
         self.data_viewer = DataViewer(self)
