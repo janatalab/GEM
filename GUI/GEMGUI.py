@@ -836,19 +836,6 @@ class GEMGUI(Frame):
         self.root = Tk()
         Frame.__init__(self, self.root)
 
-        self.hst = hours_since_trump()
-
-        self.presets = presets
-
-        # What we initialize depends on our source of run parameters, 
-        # i.e. whether they are local or from PyEnsemble
-
-        # In multi-tempo, will need to set run_duration on the fly.
-        self.presets["run_duration"] = self["windows"] / self["metronome_tempo"] * 60.0
-
-        self.randomize_alphas()
-        self.get_ioi()
-
         # Window title
         self.root.title("GEM Arduino acquisition system")
         self.grid()
@@ -856,10 +843,23 @@ class GEMGUI(Frame):
         # Initialize a dictionary for registering cleanup actions
         self.cleanup = dict()
 
+        # Initialize a session identifier
+        self.hst = hours_since_trump()
+
+        self.presets = presets
+
         # Determine whether we are connecting with PyEnsemble
-        self.use_pyensemble = False
-        if self.presets.get("connect_pyensemble", False):
-            self.use_pyensemble = True
+        self.use_pyensemble = self.presets.get("connect_pyensemble", False):
+
+        # What we initialize depends on our source of run parameters, 
+        # i.e. whether they are local or from PyEnsemble
+        self.params_src = self.presets.get("params_src", "local")
+
+        # If we are not relying on an external source for run parameters, go ahead and initialize our trial order
+        if self.params_src == "local":      
+            self.presets["run_duration"] = self["windows"] / self["metronome_tempo"] * 60.0
+            self.randomize_alphas()
+            self.get_ioi()
 
         # Add relevant modules
         self.basic_info = BasicInfo(self, self.presets["tappers_requested"])
@@ -873,7 +873,7 @@ class GEMGUI(Frame):
 
 
         # thread for passing messages between IO thread and GUI, making this a
-        # seperate thread prevents the IO thread from getting blocked when
+        # separate thread prevents the IO thread from getting blocked when
         # trying to send messages
         self.itc = ITC()
 
@@ -939,6 +939,7 @@ class GEMGUI(Frame):
         d["time"] = get_time()
 
         # all randomized alpha values for each run to the gdf fileheader
+        # This really only applies if we are generating run parameters locally instead of requesting them, on a per-run basis, from an external source.
         d["alpha_order"] = list(self.alphas)
 
         # create file name from presets and subids
