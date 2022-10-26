@@ -31,15 +31,7 @@ function GEMDataFile(filepath::String)
         hdr = JSON.parse(String(read(io, hdr_length)))
         println("Header: ", hdr)
 
-        if haskey(hdr, "metronome_tempo")
-            num_tempos = length(hdr["metronome_tempo"])
-        else
-            num_tempos = 1
-        end
-
-        num_alphas = length(hdr["metronome_alpha"])
-
-        nrun = num_tempos * num_alphas * Int64(hdr["repeats"])
+        nrun = length(hdr["metronome_alpha"]) * Int64(hdr["repeats"])
         println("#runs: ", nrun)
 
         # idx_map = read(io, UInt64, nrun)
@@ -171,7 +163,7 @@ function read_run_header(file::GEMDataFile, k::Integer=1)
     @assert(k <= file.nrun, "Invalid run number!")
 
     offset = file.idx_map[k]
-    println("\nReading header for run ", k, " at offset ", offset)
+    println("Reading header for run ", k, " at offset ", offset)
 
     if offset > 0
         open(file.path, "r") do io
@@ -180,7 +172,6 @@ function read_run_header(file::GEMDataFile, k::Integer=1)
             println("Header length: ", hdr_length)
 
             hdr = JSON.parse(String(read(io, hdr_length)))
-            println("Header: ", hdr)
             return hdr, position(io)
         end
     else
