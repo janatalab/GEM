@@ -241,7 +241,7 @@ class GEMIOManager:
 # ==============================================================================
 #
 class GEMAcquisition(Thread):
-    def __init__(self, datafile, itc, presets, alpha):
+    def __init__(self, datafile, itc, presets, alpha, tempo):
 
         Thread.__init__(self)
 
@@ -254,7 +254,7 @@ class GEMAcquisition(Thread):
 
         self.windows = presets["windows"]
 
-        self.tempo = self.constants["GEM_METRONOME_TEMPO"] + bytes(str(int(presets["metronome_tempo"])), 'utf-8') 
+        self.tempo = self.constants["GEM_METRONOME_TEMPO"] + bytes(str(int(tempo)), 'utf-8') 
 
         self.alpha = self.constants["GEM_METRONOME_ALPHA"] + bytes(str(alpha),'utf-8')
 
