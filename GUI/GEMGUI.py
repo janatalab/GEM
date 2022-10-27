@@ -326,8 +326,13 @@ class ExperimentControl(GEMGUIComponent):
         params = {
                 "run_number": krun+1,
                 "start_time": get_time(),
-                "alpha": self.parent.alphas[krun]
+                "alpha": self.parent.alphas[krun],
+                "tempo": self.parent.tempos[krun],
             }
+
+        # Need to calculate and set the run_duration
+        self.parent.presets["run_duration"] = self.parent.presets["windows"] / params["tempo"] * 60.0
+        self.parent.get_ioi(params["tempo"])
 
         # If connected to PyEnsemble, initialize the trial
         if self.parent.use_pyensemble:
@@ -347,7 +352,8 @@ class ExperimentControl(GEMGUIComponent):
         self.acq = GEMAcquisition(data_file,
             self.parent.itc,
             self.parent.presets,
-            self.parent.alphas[krun]
+            self.parent.alphas[krun],
+            self.parent.tempos[krun],
         )
 
         # make sure the itc is in the not-done state
@@ -836,19 +842,6 @@ class GEMGUI(Frame):
         self.root = Tk()
         Frame.__init__(self, self.root)
 
-        self.hst = hours_since_trump()
-
-        self.presets = presets
-
-        # What we initialize depends on our source of run parameters, 
-        # i.e. whether they are local or from PyEnsemble
-
-        # In multi-tempo, will need to set run_duration on the fly.
-        self.presets["run_duration"] = self["windows"] / self["metronome_tempo"] * 60.0
-
-        self.randomize_alphas()
-        self.get_ioi()
-
         # Window title
         self.root.title("GEM Arduino acquisition system")
         self.grid()
@@ -856,12 +849,38 @@ class GEMGUI(Frame):
         # Initialize a dictionary for registering cleanup actions
         self.cleanup = dict()
 
-        # Determine whether we are connecting with PyEnsemble
-        self.use_pyensemble = False
-        if self.presets.get("connect_pyensemble", False):
-            self.use_pyensemble = True
+        # Initialize a session identifier
+        self.hst = hours_since_trump()
 
-        # Add relevant modules
+        # Initializing the Frame presets, gives us access to these directly as self[preset_key]
+        self.presets = presets
+
+        # Determine whether we are connecting with PyEnsemble
+        self.use_pyensemble = self.presets.get("connect_pyensemble", False)
+
+        # What we initialize depends on our source of run parameters, 
+        # i.e. whether they are local or from PyEnsemble
+        self.presets["params_src"] = self.presets.get("params_src", "local")
+
+        # If we are not relying on an external source for run parameters, go ahead and initialize our trial order
+        if self["params_src"] == "local":
+            #  Make sure that tempo is a list
+            if self["metronome_tempo"] and type(self["metronome_tempo"]) != list:
+                self.presets["metronome_tempo"] = [self.presets["metronome_tempo"]]
+            
+            # Figure out how many tempos/tempi we have
+            self.presets["num_tempos"] = len(self["metronome_tempo"])
+
+            # Create our list of runs defined by tempo, alpha combination
+            #self.randomize_alphas()
+            self.randomize_runs()
+
+            # Get the tempo of our first run
+            self.presets["run_duration"] = self["windows"] / self.tempos[0] * 60.0
+
+        #
+        # Add relevant modules to the GUI
+        #
         self.basic_info = BasicInfo(self, self.presets["tappers_requested"])
 
         # Add PyEnsemble components if requested
@@ -873,7 +892,7 @@ class GEMGUI(Frame):
 
 
         # thread for passing messages between IO thread and GUI, making this a
-        # seperate thread prevents the IO thread from getting blocked when
+        # separate thread prevents the IO thread from getting blocked when
         # trying to send messages
         self.itc = ITC()
 
@@ -908,16 +927,30 @@ class GEMGUI(Frame):
         if k in self.cleanup:
             self.cleanup.pop(k)
 
-    def get_ioi(self):
-        self.presets["ioi"] = int(60000 / self["metronome_tempo"])
+    def get_ioi(self, tempo):
+        self.presets["ioi"] = int(60000 / tempo)
 
     def randomize_alphas(self):
         self.alphas = np.repeat(self["metronome_alpha"], self["repeats"]).astype(float)
         np.random.shuffle(self.alphas)
 
-        # TODO: need to save random list and write to header and ideally to
-        # output file; otherwise, don't know what alpha value corresponds to
-        # which run...
+    def randomize_runs(self):
+        # Create a list of tuples that are all combinations of tempo and alpha
+        combos = []
+
+        for tempo in self["metronome_tempo"]:
+            for alpha in self["metronome_alpha"]:
+                combos.append({"tempo": tempo, "alpha": alpha})
+
+        # Create a list containing the desired number of repeats
+        runs = np.repeat(combos, self["repeats"])
+
+        # Shuffle the list
+        np.random.shuffle(runs)
+
+        # Read out the tempo and alpha values
+        self.tempos = [run["tempo"] for run in runs]
+        self.alphas = [run["alpha"] for run in runs]
 
     def on_close(self):
         doclose = True
@@ -938,9 +971,6 @@ class GEMGUI(Frame):
         d["date"] = get_date()
         d["time"] = get_time()
 
-        # all randomized alpha values for each run to the gdf fileheader
-        d["alpha_order"] = list(self.alphas)
-
         # create file name from presets and subids
         filepath = os.path.join(data_dir, self["filename"] + "-" +
             "_".join(d["subject_ids"]) + ".gdf")
@@ -951,7 +981,6 @@ class GEMGUI(Frame):
 
         nruns = len(self.alphas)
 
-        #TODO add conditional about this path already existing (in GEMIO?)
         self.data_file = GEMDataFile(filepath, nruns)
         self.data_file.write_file_header(d, nruns)
 
