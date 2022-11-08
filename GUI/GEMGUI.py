@@ -665,7 +665,7 @@ class GroupSession(GEMGUIComponent):
             self.update()
 
             # Register our cleanup routine
-            self.register_cleanup("pyensemble", self.group_session.end_experiment)
+            self.parent.register_cleanup("pyensemble", self.end_experiment)
             
         else:
             showerror("PyEnsemble Error","Unable to attach to group session")
