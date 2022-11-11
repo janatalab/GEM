@@ -695,6 +695,10 @@ class GroupSession(GEMGUIComponent):
 
         # Create necessary entries in the basic_info section
         for s in subjects:
+            # Make sure we aren't dealing with an anonymous subject
+            if not sinfo[s]['first'] and not sinfo[s]['last']:
+                continue
+
             # Check whether an entry already exists
             if s in subids:
                 continue
@@ -796,7 +800,7 @@ class GroupSession(GEMGUIComponent):
         # Set our params
         data.update({"params": json.dumps({
                 "alpha": params["alpha"],
-                "tempo": self.parent.presets["metronome_tempo"],
+                "tempo": params["tempo"],
                 "trial_num": params["run_number"],
                 "start_time": params["start_time"],
             })
