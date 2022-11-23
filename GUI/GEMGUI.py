@@ -260,7 +260,6 @@ class ExperimentControl(GEMGUIComponent):
         pat = re.compile(r"^\d{6}[a-z]{2,3}\d?$")
 
         ids = self.parent.basic_info.get_subjids()
-        pad_ids = self.parent.basic_info.get_padids()
 
         k = 1
         for id in ids:
@@ -277,8 +276,10 @@ class ExperimentControl(GEMGUIComponent):
                     showerror("Invalid Subject ID", "Please append the subject's initials to the number: '" + hst + "'")
                     return False
 
-        # Make sure we have pad IDs
+        # Make sure we have pad IDs and that they are unique
         unique_padids = []
+
+        pad_ids = self.parent.basic_info.get_padids()
         for p in pad_ids:
             if not p:
                 showerror("Missing Pad ID", "Please enter a pad for all subjects")
@@ -478,6 +479,19 @@ class BasicInfo(GEMGUIComponent):
                 ids.append(self["subjid-" + str(k+1) + "-pad"].get_text())
 
         return ids
+
+    def get_subinfo(self):
+        subinfo = list()
+        if self.nsubj:
+            for k in range(0, self.nsubj):
+                subinfo.append(
+                    {
+                        'id': self["subjid-" + str(k+1)].get_text(),
+                        'pad': self["subjid-" + str(k+1) + "-pad"].get_text()
+                    }
+                )
+
+        return subinfo
 
     def get_experimenter(self):
         return self["experimenter"].get_text()
@@ -971,6 +985,7 @@ class GEMGUI(Frame):
 
         d = copy(self.presets)
         d["subject_ids"] = self.basic_info.get_subjids()
+        d["subject_info"] = self.basic_info.get_subinfo()
         d["experimenter_id"] = self.basic_info.get_experimenter()
         d["date"] = get_date()
         d["time"] = get_time()
