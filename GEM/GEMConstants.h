@@ -10,11 +10,11 @@
 #define GEMCONSTANTS_H_
 
 #define DEBUG
-#undef DEBUG
+// #undef DEBUG
 
 // DEBUG_SETTINGS is used to have the Metronome Arduino send receipts for information received from the ECC
 #define DEBUG_SETTINGS
-#undef DEBUG_SETTINGS
+// #undef DEBUG_SETTINGS
 
 /* -----------------------------------------------------------------------------
 NOTE: I've changed the constants system to use a more structured organization
@@ -84,18 +84,34 @@ Error handling related constants (0x2* = 32 - 47)
 #define ERR_WAVEHC_WAVE_CREATE   0x26  //38
 
 /* -----------------------------------------------------------------------------
-Sound related constants (0x3* = 48 - 71)
+Sound related constants (0x3* = 48 - 63)
 ----------------------------------------------------------------------------- */
 //NOTE: these might be considered control / "state" constants too, so it might
-//make sense to move then to the contol family
-#define MUTE_SOUND   0x30 //48
-#define UNMUTE_SOUND 0x31 //49
+//make sense to move them to the control family
+#define MUTE_SOUND              0x30 //48
+#define UNMUTE_SOUND            0x31 //49
+#define LIST_AVAILABLE_SOUNDS   0x32 //50
+#define LOAD_SOUND              0x33 //51
+
+/* -----------------------------------------------------------------------------
+Device identifier constants (0x4* = 64 - 79)
+----------------------------------------------------------------------------- */
+// These are for when we need to refer to a specific device
+#define DEV_METRONOME        0x40  //64
+#define DEV_TAPPER_1         0x41  //65
+#define DEV_TAPPER_2         0x42  //66
+#define DEV_TAPPER_3         0x43  //67
+#define DEV_TAPPER_4         0x44  //68
+
 
 /* -----------------------------------------------------------------------------
 DTP identifiers (DTP -> data transfer protocol: 0xf* = 240 - 255)
 ----------------------------------------------------------------------------- */
 // transfer only raw data: metronome time & asynchronies
 #define GEM_DTP_RAW 0xf0 //240
+
+// transfer a list of sounds available on a device
+#define GEM_DTP_SND_LIST 0xf1
 
 /* -----------------------------------------------------------------------------
 Miscellaneous constants for which the value is non-arbitrary. These are written

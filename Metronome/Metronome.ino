@@ -45,7 +45,6 @@
 #ifdef DEBUG
   #pragma message("DEBUG MODE IS ON")
 #endif
-
 // NOTE: if you are sending messages from the Arduino serial monitor for debugging purposes,
 // send the family code then value separated by a space. If you send them in succession Arduino
 // does not respond properly. - LF 20170706
@@ -62,7 +61,8 @@ bool TRIAL_RUNNING = false;
 uint8_t GEM_CURRENT_STATE = GEM_STATE_IDLE;
 
 // Get ourselves a GEMSound object
-char soundName[ ] = "1.WAV";
+// char soundName[ ] = "1.WAV";
+char soundName[] = "A2_MAR.WAV";
 GEMSound sound;
 
 //// PINS THAT WE RECEIVE INTERRUPTS ON FROM THE TAPPERS
@@ -174,7 +174,7 @@ void write_to_tappers(uint8_t val)
     {
         //NOTE: this is a bit of a more interesting case, <tapperIsConnected> is
         //a volatile global (set in the tapper handshake ISR) but once it is set
-        //it functions effectivly as read-only (never gets reset) so
+        //it functions effectively as read-only (never gets reset) so
         //'technically' we shouldn't have to protect this with a
         //ScopedVolatileLock as we don't use this function until well after
         //<tapperIsConnected> is set... but we'lll throw one in just to be safe
@@ -349,6 +349,66 @@ void idle()
                 #endif
 
                 break;
+
+            case LIST_AVAILABLE_SOUNDS:
+                {
+                    // Get the device whose sounds we are being asked to list
+                    uint8_t device; 
+                    uint8_t tapper_id; 
+
+                    while (!Serial.available()) delay(10);
+
+                    device = (uint8_t)Serial.read();
+
+                    switch (device){
+                        case DEV_TAPPER_1:
+                            tapper_id = 1;
+                            break;
+
+                        case DEV_TAPPER_2:
+                            tapper_id = 2;
+                            break;
+
+                        case DEV_TAPPER_3:
+                            tapper_id = 3;
+                            break;
+
+                        case DEV_TAPPER_4:
+                            tapper_id = 4;
+                            break;
+
+                        default:
+                            tapper_id = 0; // metronome
+                    }
+
+                    #ifdef DEBUG_SETTINGS
+                        Serial.print(F("Requesting sound list from: "));
+                        Serial.println(device);
+                    #endif
+
+                    if (tapper_id == 0){
+                        #ifdef DEBUG_SETTINGS
+                            Serial.print(F("Num available sounds: "));
+                            Serial.println(sound.numAvailableSounds());
+                        #endif
+
+                        Serial.write(GEM_DTP_SND_LIST);
+                        Serial.write(DEV_METRONOME);
+
+                        for (uint8_t s = 0; s < sound.numAvailableSounds(); s++){
+                            // Serial.print("Found sound ... ");
+                            sound.getSoundNameByIndex(s);
+                            // Serial.println(sound.name);
+                            Serial.write((char*)sound.name, sizeof(sound.name));
+                        }                
+                    } else {
+                        wire_write(tapper_id, LIST_AVAILABLE_SOUNDS);
+                    }
+
+                }
+                break;
+
+                // sound.listAvailableSounds()
 
             //NOTE: potential error reporting system:
             //ECC is requestig error status, send value of global

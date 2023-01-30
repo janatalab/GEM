@@ -13,7 +13,7 @@ GEMSound::GEMSound() {}
 
 // Public wrapper for playSoundFile()
 void GEMSound::play(void){
-  playSoundFile(_file);
+  playSoundFile();
 }
 
 // setup the SD Card
@@ -42,40 +42,45 @@ void GEMSound::setupSDCard(void){
   root.openRoot(vol);
 }
 
-void GEMSound::indexFiles(void){
+uint8_t GEMSound::numAvailableSounds(void){
+  uint8_t numFiles = 0;
 
-  // char name[10];
-  // int i = 0; // TODO: Global variable?
+  root.rewind();
+  while (root.readDir(dirBuf) > 0) {     // read the next file in the directory 
+    // skip subdirs . and ..
+    // if (dirBuf.name[0] == '.' || DIR_IS_SUBDIR(dirBuf))
+    //   continue;
+    if (DIR_IS_FILE(dirBuf) && !(dirBuf.name[0] == '_'))
+      numFiles++;
+  }
 
-  // // copy flash string to RAM
-  // strcpy_P(name, PSTR("x.WAV"));
+  return numFiles;
+}
 
-  // // Make file name
-  // name[0] = fileLetter[i];
+void GEMSound::getSoundNameByIndex(uint8_t s_index){
+  uint8_t index = 0;
 
-  // // Open file by name
-  // if (!_file.open(root, name)) error("open by name");
+  // Rewind our directory
+  root.rewind();
 
-  // // Save file's index (byte offset of directory entry divided by entry size)
-  // // Current position is just after entry so subtract one.
-  // fileIndex[i] = root.readPosition()/32 - 1;
+  while (root.readDir(dirBuf) > 0) {     // read the next file in the directory 
+    // skip subdirs . and ..
+    // if (dirBuf.name[0] == '.' || DIR_IS_SUBDIR(dirBuf)) 
+    //   continue;
 
+    if (DIR_IS_FILE(dirBuf) && !(dirBuf.name[0] == '_')){
+      if (index == s_index){
+        dirName(dirBuf, name);
+        break;
+      } else {
+        index++;
+      }
+    }
+  }
 }
 
 // loads sound file identified by name from SD Card
 FatReader GEMSound::loadByName(char *str){
-  // PgmPrintln("Index files"); // indexes files
-  // _index = index;
-  //indexFiles();
-
-  // open sound file by index
-//  if (!file.open(root, fileIndex[index])) err("open by index");
- //if (!_file.open(root, _index)) r.error(ERR_WAVEHC_OPEN_BY_INDEX);
-
-  // Open file by name TODO
-  // if (!_file.open(root, str)) r.error(ERR_WAVEHC_OPEN_BY_NAME);
-  // if (!wave.create(_file)) r.error(ERR_WAVEHC_WAVE_CREATE);
-
   _file.open(root, str);
   wave.create(_file);
 
@@ -83,12 +88,7 @@ FatReader GEMSound::loadByName(char *str){
 }
 
 // creates and plays a wave object
-void GEMSound::playSoundFile(FatReader _file){
-
-	// create a Wave
-	// 18Mar2017 PJ - see about needing to create it only once
-	// and then subsequently just play (and rewind if necessary)
-	//if (!wave.create(_file)) r.error(ERR_WAVEHC_WAVE_CREATE);
+void GEMSound::playSoundFile(void){
 
   // stop playback in case we're playing back
   if (wave.isplaying) {

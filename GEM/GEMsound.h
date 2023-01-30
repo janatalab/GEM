@@ -18,7 +18,7 @@
 
 // Waveshield utilites
 #include "WaveUtil.h"
-
+   
 // Define the GEMSound class
 class GEMSound {
 public:
@@ -27,8 +27,11 @@ public:
 
   // Functions
   void setupSDCard(void);
+  uint8_t numAvailableSounds(void);
+  void getSoundNameByIndex(uint8_t index);
   FatReader loadByName(char *str);
   void play(void);
+  char name[13];
 
 private:
   int _index;
@@ -40,10 +43,10 @@ protected:
   FatReader root; // This holds the information for the volumes root directory
   FatReader _file; // This object represent the WAV file
   WaveHC wave;    // This is the only wave (audio) object, since we will only play one at a time
+  dir_t dirBuf;
 
   //////// FUNCTIONS
-  void indexFiles(void);
-  void playSoundFile(FatReader _file);
+  void playSoundFile(void);
 }; // end GEMSound
 
 #endif
