@@ -205,11 +205,13 @@ class GEMIOManager:
                     print("serial is open!")
 
                 self.file = datafile
-                self.file.reopen()
+                if self.file:
+                    self.file.reopen()
 
             def close(self):
                 self.com.close()
-                self.file.close()
+                if self.file:
+                    self.file.close()
 
             def send(self, msg):
                 self.com.write(msg)

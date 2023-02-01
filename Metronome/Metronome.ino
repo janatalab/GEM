@@ -400,12 +400,16 @@ void idle()
                             sound.getSoundNameByIndex(s);
                             // Serial.println(sound.name);
                             Serial.write((char*)sound.name, sizeof(sound.name));
-                        }                
+                        }         
                     } else {
                         wire_write(tapper_id, LIST_AVAILABLE_SOUNDS);
                     }
 
+                    // Send a termination code
+                    Serial.write(GEM_REQUEST_ACK);
+
                 }
+
                 break;
 
                 // sound.listAvailableSounds()
