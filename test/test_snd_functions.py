@@ -33,51 +33,69 @@ presets = {
 constants = parse_constants(presets["hfile"])
 
 def get_sound_lists():
+    check_devices = ["DEV_METRONOME","DEV_TAPPER_1","DEV_TAPPER_2","DEV_TAPPER_3","DEV_TAPPER_4"]
+    device_sounds = {}
+
     with GEMIOManager(presets["serial"], None, False) as io:
         # allow some time for handshake!
-        response = b""
+        io.com.readline()
 
-        response += io.com.readline()
+        for device in check_devices:
+            print(f"Fetching sounds for {device}")
 
-        done = False
-        attempts = 0
-        while (not done):
-            n = io.available()
-            if n > 0:
-                print(f"Reading {n} bytes")
-                response += io.com.read(n)
+            # Send the request to list available sounds for the metronome
+            msg = constants["LIST_AVAILABLE_SOUNDS"] + constants[device]
+            print(f"Sending message: {msg}")
+            io.send(msg)
 
-                # print(f"Cumulative response: {response}")
+            # Listen for the response
+            done = False
+            response = b""
 
-            sleep(2)
-            attempts += 1
+            while (not done):
+                n = io.available()
+                if n > 0:
+                    # print(f"Reading {n} bytes")
+                    response += io.com.read(n)
 
-            if attempts > 3:
-                done = True
+                    # print(f"Cumulative response: {response}")
 
-        print(response.decode('utf-8'))
+                    # Check whether we've received the termination code
+                    if response.endswith(constants["GEM_REQUEST_ACK"]):
+                        done = True
 
-        pdb.set_trace()
+            # Convert to bytearray
+            response = bytearray(response[:-1])
 
-        # Send the request to list available sounds for the metronome
-        msg = constants["LIST_AVAILABLE_SOUNDS"] + constants["DEV_METRONOME"]
-        print(f"Sending message: {msg}")
-        io.send(msg)
+            if not len(response):
+                continue
 
-        # Listen for the response
-        done = False
-        response = b""
+            # Check whether this is GEM_DTP_SND_LIST packet
+            if response.startswith(constants["GEM_DTP_SND_LIST"]):
+                # Slice our response
+                response = response[1:]
 
-        while (not done):
-            n = io.available()
-            if n > 0:
-                print(f"Reading {n} bytes")
-                response += io.com.read(n)
+                actual_device = None
+                for k,v in constants.items():
+                    if isinstance(v, bytes) and response.startswith(v):
+                        actual_device = k
+                        response = response[1:]
+                        break
 
-                print(f"Cumulative response: {response}")
+                # Make sure it is for the requested device
+                if actual_device != device:
+                    ValueError(f"Device mismatch: Expected {device}, got {actual_device}")
 
-                # Check whether we've received the termination code
-                pdb.set_trace()
-                response.endswith(constants["GEM_REQUEST_ACK"])
+            # pdb.set_trace()
+            print(f"Sounds on device: {device}")
+            sounds = []
+            for s in response.split(b"\x00"):
+                if s:
+                    soundname = bytes(s).decode('utf-8')
+                    sounds.append(soundname)
+                    print(f"{soundname}")
 
+            device_sounds.update({device:sounds})
+
+    return device_sounds
 

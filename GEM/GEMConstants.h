@@ -10,11 +10,11 @@
 #define GEMCONSTANTS_H_
 
 #define DEBUG
-// #undef DEBUG
+#undef DEBUG
 
 // DEBUG_SETTINGS is used to have the Metronome Arduino send receipts for information received from the ECC
 #define DEBUG_SETTINGS
-// #undef DEBUG_SETTINGS
+#undef DEBUG_SETTINGS
 
 /* -----------------------------------------------------------------------------
 NOTE: I've changed the constants system to use a more structured organization
