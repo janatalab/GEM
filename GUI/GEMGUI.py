@@ -296,7 +296,6 @@ class ExperimentControl(GEMGUIComponent):
 
     # --------------------------------------------------------------------------
     def start_run(self):
-
         if not self.check_user_input():
             return
 
@@ -305,10 +304,16 @@ class ExperimentControl(GEMGUIComponent):
                 showerror("PyEnsemble Error","Experiment not initialized!")
                 return
 
+        start_button_label = "Start Run"
+
+        # disable start button
+        self["ss"].disable(start_button_label)
+
         # if this is the first run, init the data file and write the file header
         if self.counter == self.nruns:
             data_file = self.parent.init_data_file()
             if isinstance(data_file, str):
+                self["ss"].enable(start_button_label)
                 return
 
             # first run, disable editing of text boxes
@@ -316,9 +321,6 @@ class ExperimentControl(GEMGUIComponent):
 
         else:
             data_file = self.parent.data_file
-
-        # disable start button
-        self["ss"].disable("Start")
 
         # Get current run number
         krun = self.nruns - self.counter
@@ -335,18 +337,24 @@ class ExperimentControl(GEMGUIComponent):
         self.parent.presets["run_duration"] = self.parent.presets["windows"] / params["tempo"] * 60.0
         self.parent.get_ioi(params["tempo"])
 
-        # If connected to PyEnsemble, initialize the trial
+        # If connected to PyEnsemble, send the parameters for this run
         if self.parent.use_pyensemble:
-            # Initialize the trial
+
+            # Initialize the trial in PyEnsemble. This can fail, so we need to wait for a response
+            print('start_run: initializing PyEnsemble trial')
             initialized = self.parent.group_session.initialize_trial(params)
 
             if not initialized:
+                print('start_run: failed PyEnsemble initialization')
+                self["ss"].enable(start_button_label)
                 return
 
             # Signal to PyEnsemble that we are in the running state
+            print('start_run: starting PyEnsemble trial')
             self.parent.group_session.start_trial()
 
         # write run header
+        print('start_run: writing header')
         data_file.write_header(krun, params)
 
         # the actual IO thread
@@ -385,8 +393,8 @@ class ExperimentControl(GEMGUIComponent):
 
     # --------------------------------------------------------------------------
     def clean_up(self):
-        print("Asking IO thread to terminate")
-        print(f"Running: {self.running}")
+        print("clean_up: Asking IO thread to terminate")
+        print(f"clean_up: Running: {self.running}")
         if self.running:
             self.acq.join()
             self.timer.cancel()
@@ -394,7 +402,7 @@ class ExperimentControl(GEMGUIComponent):
             self["timeleft"].set_text("00:00")
             self.parent.unregister_cleanup("abort_run")
             self.parent.register_cleanup("itc_thread", self.parent.itc.close)
-            self["ss"].enable("Start")
+            self["ss"].enable("Start Run")
 
             self.running = False
 
@@ -410,7 +418,7 @@ class ExperimentControl(GEMGUIComponent):
         self["runsleft"].set_text(str(self.counter))
 
         if self.counter < 1:
-            self["ss"].disable("Start")
+            self["ss"].disable("Start Run")
 
     # --------------------------------------------------------------------------
     def format_time(self, t):
@@ -549,6 +557,7 @@ class GroupSession(GEMGUIComponent):
 
         # Buttons
         self.add_row("buttons", ButtonGroup(self, {"Connect": self.connect_server, "Update": self.update, "Initialize": self.initialize_experiment}, 40))
+        self['buttons'].disable("Initialize")
 
         # Add participant list viewer
         dv = Text(self, height=6, width=45, borderwidth=2)
@@ -684,28 +693,35 @@ class GroupSession(GEMGUIComponent):
         else:
             showerror("PyEnsemble Error","Unable to attach to group session")
 
-
-    # Update our bound participant list
-    def update(self):
+    def get_pyensemble_participant_list(self):
         url = self.pyensemble["server"]+self.pyensemble["urls"]["update"]
         
         resp = self.pyensemble["session"].get(url, verify=self.pyensemble['verify_ssl'])
         if not resp.ok:
             showerror("PyEnsemble Error","Unable to update participant list")
+            return {}
+
+        # Extract our participant info
+        sinfo = resp.json()
+
+        return sinfo
+
+
+    # Update our bound participant list
+    def update(self):
 
         # Get our basic_info section
         basic_info = self.parent.basic_info
 
-        # Extract our participant info
-        sinfo = resp.json()
+        sinfo = self.get_pyensemble_participant_list()
         subjects = sinfo.keys()
-
-        # Update the BasicInfo section
-        # pdb.set_trace()
+        num_pyensemble_subs = len(subjects)
 
         # Get the existing subject IDs
         subids = basic_info.get_subjids()
-        nsubs = len(subids)
+        num_gem_subs = len(subids)
+
+        # Update the BasicInfo section
 
         # Create necessary entries in the basic_info section
         for s in subjects:
@@ -718,9 +734,9 @@ class GroupSession(GEMGUIComponent):
                 continue
 
             # Create the entry
-            nsubs += 1
-            subid_id = "subjid-"+str(nsubs)
-            subid_tbg = TextBoxGroup(basic_info, "Subject " + str(nsubs) + " ID:", 12)
+            num_gem_subs += 1
+            subid_id = "subjid-"+str(num_gem_subs)
+            subid_tbg = TextBoxGroup(basic_info, "Subject " + str(num_gem_subs) + " ID:", 12)
             subid_tbg.set_text(s)
 
             padid_id = subid_id+"-pad"
@@ -742,7 +758,17 @@ class GroupSession(GEMGUIComponent):
         self["dv"].insert("end", msg)
         self["dv"]["state"] = "disabled"
 
-        self.parent.basic_info.nsubj = nsubs  
+        self.parent.basic_info.nsubj = num_gem_subs
+
+        # Determine whether we can enable the initialization button
+        # Fetch our current PyEnsemble list for good measure
+        num_pyensemble_subs = len(self.get_pyensemble_participant_list().keys())
+
+        if num_gem_subs and num_gem_subs == num_pyensemble_subs:
+            self["buttons"].enable("Initialize")
+        else:
+            self["buttons"].disable("Initialize")
+
 
     def initialize_experiment(self):
         # Construct our headers
@@ -834,9 +860,9 @@ class GroupSession(GEMGUIComponent):
                 if error_details['error'] == 'TrialNumberMismatch':
                     pass
 
-
-            showerror("PyEnsemble Error","Failed to initialize trial!")
             print(err_msg)
+            showerror("PyEnsemble Error","Failed to initialize trial!")
+
             return False
 
         return True
