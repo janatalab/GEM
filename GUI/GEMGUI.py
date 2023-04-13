@@ -175,9 +175,13 @@ class DataViewer(GEMGUIComponent):
         self.set_title("Data Viewer")
 
         dv = Text(self, height=20, width=45, borderwidth=2)
-        dv.insert(tkinter.INSERT,
-        "Hello!\n\nSubject id format:\n{} followed by the subject's initials and a digit if needed.\n\nData will appear here...".format(parent.hst)
-        )
+
+        if not parent.presets.get("connect_pyensemble", False):
+            welcome_str = "Hello!\n\nSubject id format:\n{} followed by the subject's initials and a digit if needed.\n\nData will appear here...".format(parent.hst)
+        else:
+            welcome_str = "Awaiting subject IDs from PyEnsemble ..."
+
+        dv.insert(tkinter.INSERT, welcome_str)
         dv['state'] = 'disabled'
         self.add_row("dv", dv)
 
@@ -227,14 +231,20 @@ class ExperimentControl(GEMGUIComponent):
 
         self.set_title("Experiment Control Panel")
 
+        self.start_button_label = "Start Run"
+        self.abort_button_label = "Abort Run"
+
         # Start and Escape buttons
-        spec = {"Start Run": self.start_run, "Abort Run": self.abort_run}
+        spec = {self.start_button_label: self.start_run, self.abort_button_label: self.abort_run}
         self.add_row("ss", ButtonGroup(self, spec, 39))
+
+        if self.parent.use_pyensemble:
+            self["ss"].disable([self.start_button_label, self.abort_button_label])
 
         # Time remaining in run countdown
         self.add_row("timeleft", TextBoxGroup(self,
             "Time Remaining (this Run):", 5))
-        self["timeleft"].set_text(self.format_time(self.parent["run_duration"]))
+        self["timeleft"].set_text(self.format_time(self.parent.presets.get("run_duration", 0)))
         self["timeleft"].disable()
 
         self.nruns = len(self.parent.alphas)
@@ -303,8 +313,6 @@ class ExperimentControl(GEMGUIComponent):
             if not self.parent.group_session.pyensemble["initialized_experiment"]:
                 showerror("PyEnsemble Error","Experiment not initialized!")
                 return
-
-        start_button_label = "Start Run"
 
         # disable start button
         self["ss"].disable(start_button_label)
@@ -402,7 +410,7 @@ class ExperimentControl(GEMGUIComponent):
             self["timeleft"].set_text("00:00")
             self.parent.unregister_cleanup("abort_run")
             self.parent.register_cleanup("itc_thread", self.parent.itc.close)
-            self["ss"].enable("Start Run")
+            self["ss"].enable(self.start_button_label)
 
             self.running = False
 
@@ -418,7 +426,7 @@ class ExperimentControl(GEMGUIComponent):
         self["runsleft"].set_text(str(self.counter))
 
         if self.counter < 1:
-            self["ss"].disable("Start Run")
+            self["ss"].disable(self.start_button_label)
 
     # --------------------------------------------------------------------------
     def format_time(self, t):
@@ -914,10 +922,12 @@ class GEMGUI(Frame):
 
         # What we initialize depends on our source of run parameters, 
         # i.e. whether they are local or from PyEnsemble
-        self.presets["params_src"] = self.presets.get("params_src", "local")
+        self.presets["parameter_source"] = self.presets.get("parameter_source", "local")
 
         # If we are not relying on an external source for run parameters, go ahead and initialize our trial order
-        if self["params_src"] == "local":
+        if self["parameter_source"] == "local":
+            print("Using parameters from presets file.")
+
             #  Make sure that tempo is a list
             if self["metronome_tempo"] and type(self["metronome_tempo"]) != list:
                 self.presets["metronome_tempo"] = [self.presets["metronome_tempo"]]
@@ -931,11 +941,15 @@ class GEMGUI(Frame):
 
             # Get the tempo of our first run
             self.presets["run_duration"] = self["windows"] / self.tempos[0] * 60.0
+        else:
+            print(f"Using parameters from {self['parameter_source']}")
+            self.alphas = []
+            self.tempos = []
 
         #
         # Add relevant modules to the GUI
         #
-        self.basic_info = BasicInfo(self, self.presets["tappers_requested"])
+        self.basic_info = BasicInfo(self, self.presets.get("tappers_requested", 0))
 
         # Add PyEnsemble components if requested
         if self.use_pyensemble:
