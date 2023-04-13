@@ -420,6 +420,9 @@ class ExperimentControl(GEMGUIComponent):
         if self.counter < 1:
             self["ss"].disable("Start Run")
 
+            if self.parent.use_pyensemble:
+                self.parent.group_session.exit_loop()
+
     # --------------------------------------------------------------------------
     def format_time(self, t):
         mins, secs = divmod(int(np.floor(t)), 60)
@@ -537,6 +540,7 @@ class GroupSession(GEMGUIComponent):
                 "init_trial": "/experiments/gem_control/control/trial/init/",
                 "start_trial": "/experiments/gem_control/control/trial/start/",
                 "end_trial": "/experiments/gem_control/control/trial/end/",
+                "exit_loop": "/experiments/gem_control/control/loop/exit/",
             },
             'verify_ssl': self.parent.presets.get('verify_ssl',True)
         })
@@ -884,6 +888,20 @@ class GroupSession(GEMGUIComponent):
 
         # Grab our session object
         s = self.pyensemble["session"]     
+
+        # Call our endpoint
+        resp = s.get(url, verify=self.pyensemble['verify_ssl'])
+
+    def exit_loop(self):
+        # Delay sending of this
+        delay = 5
+        print(f'Exiting loop in {delay} seconds')
+        sleep(delay)
+
+        url = self.pyensemble["server"]+self.pyensemble["urls"]["exit_loop"]
+
+        # Grab our session object
+        s = self.pyensemble["session"]
 
         # Call our endpoint
         resp = s.get(url, verify=self.pyensemble['verify_ssl'])
