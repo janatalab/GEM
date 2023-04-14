@@ -894,9 +894,9 @@ class GroupSession(GEMGUIComponent):
 
     def exit_loop(self):
         # Delay sending of this
-        delay = 5
+        delay = 2
         print(f'Exiting loop in {delay} seconds')
-        sleep(delay)
+        time.sleep(delay)
 
         url = self.pyensemble["server"]+self.pyensemble["urls"]["exit_loop"]
 
