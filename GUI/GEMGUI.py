@@ -906,6 +906,12 @@ class GroupSession(GEMGUIComponent):
         # Call our endpoint
         resp = s.get(url, verify=self.pyensemble['verify_ssl'])
 
+        if not resp.ok:
+            if resp.text:
+                print(resp.text)
+
+            showerror("PyEnsemble Error","Failed to set EXIT_LOOP")
+
 # ==============================================================================
 # Build Main GUI
 # ==============================================================================
