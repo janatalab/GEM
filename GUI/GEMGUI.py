@@ -857,12 +857,12 @@ class GroupSession(GEMGUIComponent):
         if not resp.ok or p.search(resp.text):
             err_msg = ""
             if resp.text:
-                error_details = json.loads(resp.text)
-                err_msg = json.dumps(error_details, indent=2)
+                try:
+                    error_details = json.loads(resp.text)
+                    err_msg = json.dumps(error_details, indent=2)
 
-                # See if we can recover from the error
-                if error_details['error'] == 'TrialNumberMismatch':
-                    pass
+                except:
+                    err_msg = resp.text
 
             print(err_msg)
             showerror("PyEnsemble Error","Failed to initialize trial!")
