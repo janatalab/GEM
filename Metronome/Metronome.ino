@@ -401,7 +401,9 @@ void idle()
                             // Serial.println(sound.name);
                             Serial.write((char*)sound.name, sizeof(sound.name));
                         }         
-                    } else {
+                    } 
+                    else 
+                    {
                         wire_write(tapper_id, LIST_AVAILABLE_SOUNDS);
                     }
 
