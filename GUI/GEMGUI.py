@@ -949,9 +949,15 @@ class GEMGUI(Frame):
             # Figure out how many tempos/tempi we have
             self.presets["num_tempos"] = len(self["metronome_tempo"])
 
-            # Create our list of runs defined by tempo, alpha combination
-            #self.randomize_alphas()
-            self.randomize_runs()
+            if self.presets.get("fixed_run_order", False):
+                # Create our list of runs defined by tempo, alpha combination
+                #self.randomize_alphas()
+                self.randomize_runs()
+
+            else:
+                # Have to assign tempos and alphas
+                self.tempos = [run["tempo"] for run in self.presets["fixed_run_order"]]
+                self.alphas = [run["alpha"] for run in self.presets["fixed_run_order"]]
 
             # Get the tempo of our first run
             self.presets["run_duration"] = self["windows"] / self.tempos[0] * 60.0
