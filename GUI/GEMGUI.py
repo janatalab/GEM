@@ -790,10 +790,10 @@ class GroupSession(GEMGUIComponent):
         data = {"csrfmiddlewaretoken": s.cookies["csrftoken"]}
         data.update({
             "tappers_requested": self.parent.presets["tappers_requested"],
-            "metronome_alpha": self.parent.presets["metronome_alpha"],
-            "metronome_tempo": self.parent.presets["metronome_tempo"],
-            "repeats": self.parent.presets["repeats"],
-            "windows": self.parent.presets["windows"],
+            # "metronome_alpha": self.parent.presets["metronome_alpha"],
+            # "metronome_tempo": self.parent.presets["metronome_tempo"],
+            # "repeats": self.parent.presets["repeats"],
+            # "windows": self.parent.presets["windows"],
             "audio_feedback": self.parent.presets["audio_feedback"],
             "trial_generator": "fully_random"  ,
             })
@@ -949,9 +949,16 @@ class GEMGUI(Frame):
             # Figure out how many tempos/tempi we have
             self.presets["num_tempos"] = len(self["metronome_tempo"])
 
-            # Create our list of runs defined by tempo, alpha combination
-            #self.randomize_alphas()
-            self.randomize_runs()
+            fixed_run_order = self.presets.get("fixed_run_order", False)
+            if fixed_run_order:
+                # Have to assign tempos and alphas from our fixed order list
+                self.tempos = [run["tempo"] for run in fixed_run_order]
+                self.alphas = [run["alpha"] for run in fixed_run_order]
+
+            else:
+                # Create our list of runs defined by tempo, alpha combination
+                #self.randomize_alphas()
+                self.randomize_runs()
 
             # Get the tempo of our first run
             self.presets["run_duration"] = self["windows"] / self.tempos[0] * 60.0
