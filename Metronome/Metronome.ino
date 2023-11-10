@@ -478,8 +478,7 @@ void run()
                 //first byte is the data transfer protocol identifier
                 Serial.write(GEM_DTP_RAW);
 
-                // Send current window to ECC - 20170703 LF
-                //Serial.write((byte *)window, sizeof (uint16_t));
+                // Send current window to ECC
                 Serial.write((byte *)&window, sizeof (uint16_t));
 
                 /*NOTE: next, send the scheduled time of the metronome tone for
