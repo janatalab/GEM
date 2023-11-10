@@ -479,7 +479,8 @@ void run()
                 Serial.write(GEM_DTP_RAW);
 
                 // Send current window to ECC - 20170703 LF
-                Serial.write((byte *)window, sizeof (uint16_t));
+                //Serial.write((byte *)window, sizeof (uint16_t));
+                Serial.write((byte *)&window, sizeof (uint16_t));
 
                 /*NOTE: next, send the scheduled time of the metronome tone for
                 this window, which is what the asynchronies are relative too, see
