@@ -39,7 +39,7 @@ presets = {
     "hfile": os.path.join(os.environ['GEMROOT'],"GEM/GEMConstants.h"),
 
     # number of players in the experiment. NB: all 4 tapper Arduinos can remain attached to metronome Arduino
-    "tappers_requested": 4,
+    "tappers_requested": 2,
 
     # metronome adaptivity levels to be used
     "metronome_alpha": [0, .3, 1],
@@ -51,7 +51,7 @@ presets = {
     "repeats": 1,
 
     # number of metronome clicks
-    "windows": 10,
+    "windows": 20,
 
     # audio feedback condition; NB: at present, only "hear_metronome" available.
     # Future releases will allow for all variations on hearing self, metronome,
