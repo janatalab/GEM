@@ -24,6 +24,15 @@ from GEMIO import get_metronome_port
 # This is used to search for the correct port information
 metronome_serial_num = "9543731333535131D171"
 
+fixed_run_order = [
+    {'tempo': 100, 'alpha': 0.0},
+    {'tempo': 100, 'alpha': 1.0},
+    {'tempo': 100, 'alpha': 0.4},
+    {'tempo': 100, 'alpha': 0.0},
+    {'tempo': 100, 'alpha': 1.0},
+    {'tempo': 100, 'alpha': 0.4},
+]
+
 # Define experimental presets
 presets = {
     # metronome serial port info
@@ -39,24 +48,27 @@ presets = {
     "hfile": os.path.join(os.environ['GEMROOT'],"GEM/GEMConstants.h"),
 
     # number of players in the experiment. NB: all 4 tapper Arduinos can remain attached to metronome Arduino
-    "tappers_requested": 2,
+    "tappers_requested": 4,
 
     # metronome adaptivity levels to be used
-    "metronome_alpha": [0, .3, 1],
+    "metronome_alpha": [],
 
     # tempo of the metronome; unit: beats-per-minute
-    "metronome_tempo": [80, 120.0, 150],
+    "metronome_tempo": [],
 
     # number of repetitions for each alpha value
     "repeats": 1,
 
+    # fixed run order, if we aren't randomizing alphas and tempos
+    "fixed_run_order": fixed_run_order,
+
     # number of metronome clicks
-    "windows": 20,
+    "windows": 30,
 
     # audio feedback condition; NB: at present, only "hear_metronome" available.
     # Future releases will allow for all variations on hearing self, metronome,
     # and others in the experiment.
-    "audio_feedback": ["hear_metronome"],
+    "audio_feedback": ["hear_all"],
 
     # algorithm used in adapting metronome. NB: at present, only "average" is
     # available. Future releases will incorporate additional heurstic options.
@@ -66,7 +78,12 @@ presets = {
     # "spoof_mode": False,
 
     # Are we connecting to a Group Session in PyEnsemble for post-run data collection, e.g. surveys. Default = False
-    # "connect_pyensemble": False,
+    "connect_pyensemble": True,
+    "pyensemble_server": "https://atonal.ucdavis.edu/gem/",
+
+    # Useful to set verify_ssl to False if debugging
+    "verify_ssl": False,
+
 }
 
 
