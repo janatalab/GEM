@@ -428,6 +428,9 @@ class ExperimentControl(GEMGUIComponent):
         if self.counter < 1:
             self["ss"].disable(self.start_button_label)
 
+            if self.parent.use_pyensemble:
+                self.parent.group_session.exit_loop()
+
     # --------------------------------------------------------------------------
     def format_time(self, t):
         mins, secs = divmod(int(np.floor(t)), 60)
@@ -545,6 +548,7 @@ class GroupSession(GEMGUIComponent):
                 "init_trial": "/experiments/gem_control/control/trial/init/",
                 "start_trial": "/experiments/gem_control/control/trial/start/",
                 "end_trial": "/experiments/gem_control/control/trial/end/",
+                "exit_loop": "/experiments/gem_control/control/loop/exit/",
             },
             'verify_ssl': self.parent.presets.get('verify_ssl',True)
         })
@@ -794,10 +798,10 @@ class GroupSession(GEMGUIComponent):
         data = {"csrfmiddlewaretoken": s.cookies["csrftoken"]}
         data.update({
             "tappers_requested": self.parent.presets["tappers_requested"],
-            "metronome_alpha": self.parent.presets["metronome_alpha"],
-            "metronome_tempo": self.parent.presets["metronome_tempo"],
-            "repeats": self.parent.presets["repeats"],
-            "windows": self.parent.presets["windows"],
+            # "metronome_alpha": self.parent.presets["metronome_alpha"],
+            # "metronome_tempo": self.parent.presets["metronome_tempo"],
+            # "repeats": self.parent.presets["repeats"],
+            # "windows": self.parent.presets["windows"],
             "audio_feedback": self.parent.presets["audio_feedback"],
             "trial_generator": "fully_random"  ,
             })
@@ -861,12 +865,12 @@ class GroupSession(GEMGUIComponent):
         if not resp.ok or p.search(resp.text):
             err_msg = ""
             if resp.text:
-                error_details = json.loads(resp.text)
-                err_msg = json.dumps(error_details, indent=2)
+                try:
+                    error_details = json.loads(resp.text)
+                    err_msg = json.dumps(error_details, indent=2)
 
-                # See if we can recover from the error
-                if error_details['error'] == 'TrialNumberMismatch':
-                    pass
+                except:
+                    err_msg = resp.text
 
             print(err_msg)
             showerror("PyEnsemble Error","Failed to initialize trial!")
@@ -895,6 +899,26 @@ class GroupSession(GEMGUIComponent):
 
         # Call our endpoint
         resp = s.get(url, verify=self.pyensemble['verify_ssl'])
+
+    def exit_loop(self):
+        # Delay sending of this
+        delay = 2
+        print(f'Exiting loop in {delay} seconds')
+        time.sleep(delay)
+
+        url = self.pyensemble["server"]+self.pyensemble["urls"]["exit_loop"]
+
+        # Grab our session object
+        s = self.pyensemble["session"]
+
+        # Call our endpoint
+        resp = s.get(url, verify=self.pyensemble['verify_ssl'])
+
+        if not resp.ok:
+            if resp.text:
+                print(resp.text)
+
+            showerror("PyEnsemble Error","Failed to set EXIT_LOOP")
 
 # ==============================================================================
 # Build Main GUI
@@ -935,9 +959,16 @@ class GEMGUI(Frame):
             # Figure out how many tempos/tempi we have
             self.presets["num_tempos"] = len(self["metronome_tempo"])
 
-            # Create our list of runs defined by tempo, alpha combination
-            #self.randomize_alphas()
-            self.randomize_runs()
+            fixed_run_order = self.presets.get("fixed_run_order", False)
+            if fixed_run_order:
+                # Have to assign tempos and alphas from our fixed order list
+                self.tempos = [run["tempo"] for run in fixed_run_order]
+                self.alphas = [run["alpha"] for run in fixed_run_order]
+
+            else:
+                # Create our list of runs defined by tempo, alpha combination
+                #self.randomize_alphas()
+                self.randomize_runs()
 
             # Get the tempo of our first run
             self.presets["run_duration"] = self["windows"] / self.tempos[0] * 60.0
